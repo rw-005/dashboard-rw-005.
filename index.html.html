@@ -1,0 +1,2059 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistem Terpadu Kas & Kependudukan RW 05</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    @media print {
+      .no-print { display: none !important; }
+      body { background: white !important; font-size: 11px; }
+      .print-page-break { page-break-inside: avoid; }
+    }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans min-h-screen flex flex-col md:flex-row">
+
+  <div id="sidebar-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/50 z-40 hidden md:hidden"></div>
+
+  <!-- SIDEBAR MENU LENGKAP -->
+  <aside id="sidebar" class="fixed md:static inset-y-0 left-0 w-72 bg-slate-900 text-white z-50 transform -translate-x-full md:translate-x-0 transition-transform duration-200 flex flex-col shadow-xl no-print">
+    
+    <!-- HEADER LOGO + WILAYAH -->
+    <div class="p-4 border-b border-slate-800 flex items-start justify-between gap-2">
+      <div class="flex items-center gap-3">
+        <div class="relative group shrink-0">
+          <img id="app-logo-img" src="https://api.iconify.design/ph:buildings-fill.svg?color=%23f59e0b" alt="Logo" class="w-12 h-12 object-contain bg-slate-800 rounded-xl p-1 border border-slate-700">
+          <label class="absolute inset-0 bg-black/60 rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100 cursor-pointer transition" title="Ganti Logo">
+            <i class="ph-bold ph-camera text-white text-base"></i>
+            <input type="file" id="sidebar-logo-file" accept="image/*" onchange="uploadLogoLangsung(event)" class="hidden">
+          </label>
+        </div>
+        <div class="overflow-hidden">
+          <h1 id="disp-nama-lingkungan" class="font-bold text-sm leading-tight text-white truncate">RW 05 Babakan Tengah</h1>
+          <p id="disp-nama-kelurahan" class="text-[11px] text-slate-300 truncate">Kel. Adiarsa Timur</p>
+          <p id="disp-nama-kecamatan" class="text-[10px] text-slate-400 truncate">Kec. Karawang Timur</p>
+        </div>
+      </div>
+      <button onclick="toggleSidebar()" class="md:hidden text-slate-400 hover:text-white pt-1">
+        <i class="ph ph-x text-xl"></i>
+      </button>
+    </div>
+
+    <div class="px-4 py-2 bg-slate-800/60 border-b border-slate-800 flex items-center justify-between text-[11px]">
+      <span class="text-slate-400">Identitas Wilayah</span>
+      <button onclick="bukaModalIdentitas()" class="text-amber-400 hover:text-amber-300 font-medium flex items-center gap-1">
+        <i class="ph ph-pencil-simple"></i> Ubah Teks/Logo
+      </button>
+    </div>
+
+    <nav class="flex-1 p-3 space-y-1 overflow-y-auto text-sm">
+      <div class="text-[10px] font-semibold text-slate-400 uppercase px-3 py-1">Kependudukan & Sosial</div>
+      <button onclick="pindahMenu('induk-rt')" id="btn-induk-rt" class="menu-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 font-semibold text-left">
+        <i class="ph-bold ph-identification-card text-emerald-400 text-lg"></i> Data Warga Per RT & Import
+      </button>
+      <button onclick="pindahMenu('bansos')" id="btn-bansos" class="menu-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 font-semibold text-left">
+        <i class="ph-bold ph-house-line text-rose-400 text-lg"></i> Rutilahu & Bantuan Sosial
+      </button>
+      <button onclick="pindahMenu('warga')" id="btn-warga" class="menu-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 font-medium text-left">
+        <i class="ph-bold ph-users text-teal-400 text-lg"></i> Statistik Warga & Ngontrak
+      </button>
+
+      <div class="text-[10px] font-semibold text-slate-400 uppercase px-3 pt-3 py-1">Keuangan & Kegiatan</div>
+      <button onclick="pindahMenu('dashboard')" id="btn-dashboard" class="menu-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg bg-blue-600 text-white font-medium text-left">
+        <i class="ph ph-chart-pie-slice text-lg"></i> Dashboard Saldo Kas
+      </button>
+      <button onclick="pindahMenu('tutup-buku')" id="btn-tutup-buku" class="menu-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 font-semibold text-left">
+        <i class="ph-bold ph-calendar-check text-amber-400 text-lg"></i> Tutup Buku 10% Bulanan
+      </button>
+      <button onclick="pindahMenu('kegiatan-rw')" id="btn-kegiatan-rw" class="menu-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 font-semibold text-left">
+        <i class="ph-bold ph-camera text-amber-400 text-lg"></i> Laporan Kegiatan & Foto
+      </button>
+      <button onclick="pindahMenu('masuk')" id="btn-masuk" class="menu-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 font-medium text-left">
+        <i class="ph ph-arrow-circle-down-right text-emerald-400 text-lg"></i> Uang Masuk / Saldo Awal
+      </button>
+      <button onclick="pindahMenu('keluar')" id="btn-keluar" class="menu-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 font-medium text-left">
+        <i class="ph ph-arrow-circle-up-right text-rose-400 text-lg"></i> Pengeluaran
+      </button>
+
+      <div class="text-[10px] font-semibold text-slate-400 uppercase px-3 pt-3 py-1">Laporan & Pengaturan</div>
+      <button onclick="pindahMenu('laporan')" id="btn-laporan" class="menu-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 font-medium text-left">
+        <i class="ph ph-file-text text-amber-400 text-lg"></i> Laporan Kas (Tarik Per RT)
+      </button>
+      <button onclick="pindahMenu('excel')" id="btn-excel" class="menu-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 font-medium text-left">
+        <i class="ph ph-microsoft-excel-logo text-emerald-400 text-lg"></i> Import / Upload Kas Excel
+      </button>
+      <button onclick="pindahMenu('backup')" id="btn-backup" class="menu-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 font-semibold text-left">
+        <i class="ph-bold ph-database text-cyan-400 text-lg"></i> Cadangkan & Pulihkan Data
+      </button>
+      <button onclick="pindahMenu('history')" id="btn-history" class="menu-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 font-medium text-left">
+        <i class="ph-clock-counter-clockwise text-indigo-400 text-lg"></i> Riwayat Edit & Log
+      </button>
+      <button onclick="pindahMenu('keamanan')" id="btn-keamanan" class="menu-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 font-medium text-left">
+        <i class="ph-bold ph-lock-key text-rose-400 text-lg"></i> Otoritas & Reset
+      </button>
+    </nav>
+
+    <div class="p-3 border-t border-slate-800 text-[11px] text-slate-400">
+      <div id="save-status" class="flex items-center gap-1.5 text-emerald-400 font-medium">
+        <i class="ph-bold ph-check-circle"></i> Otomatis Tersimpan
+      </div>
+    </div>
+  </aside>
+
+  <!-- KONTEN UTAMA -->
+  <div class="flex-1 flex flex-col min-h-screen">
+    <header class="bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between sticky top-0 z-30 md:px-6 no-print">
+      <div class="flex items-center gap-3">
+        <button onclick="toggleSidebar()" class="p-2 -ml-2 rounded-lg text-slate-700 hover:bg-slate-100 md:hidden">
+          <i class="ph-bold ph-list text-2xl"></i>
+        </button>
+        <div class="flex items-center gap-2">
+          <img id="topbar-logo" src="https://api.iconify.design/ph:buildings-fill.svg?color=%23f59e0b" class="w-7 h-7 object-contain md:hidden">
+          <div>
+            <h2 id="topbar-title" class="font-bold text-base md:text-lg text-slate-800 leading-tight">Dashboard Saldo Kas</h2>
+            <p id="topbar-sub" class="text-[11px] text-slate-400 hidden sm:block">Babakan Tengah, Adiarsa Timur</p>
+          </div>
+        </div>
+      </div>
+      <button onclick="window.print()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg flex items-center gap-1.5 shadow-sm transition">
+        <i class="ph ph-printer"></i> Cetak Dokumen PDF
+      </button>
+    </header>
+
+    <main class="flex-1 p-4 md:p-6 space-y-5 max-w-6xl w-full mx-auto">
+      
+      <!-- ======================================================== -->
+      <!-- 1. DASHBOARD SALDO KAS & PERIODE DINAMIS                 -->
+      <!-- ======================================================== -->
+      <section id="page-dashboard" class="page-content space-y-5">
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
+            <div class="flex items-center gap-2">
+              <span class="p-1.5 bg-blue-50 text-blue-600 rounded-lg"><i class="ph-bold ph-calendar text-lg"></i></span>
+              <div>
+                <span class="text-xs font-bold text-slate-800 uppercase tracking-wide">Periode Dashboard Dinamis</span>
+                <p class="text-[11px] text-slate-400" id="dash-periode-label">Menampilkan seluruh data</p>
+              </div>
+            </div>
+
+            <div class="flex flex-wrap gap-1">
+              <button onclick="setDashPreset('all')" id="dash-btn-all" class="dash-preset-btn px-2.5 py-1 text-xs rounded-md bg-blue-600 text-white font-medium">Semua</button>
+              <button onclick="setDashPreset('today')" id="dash-btn-today" class="dash-preset-btn px-2.5 py-1 text-xs rounded-md bg-slate-100 text-slate-700 font-medium hover:bg-blue-100">Hari Ini</button>
+              <button onclick="setDashPreset('week')" id="dash-btn-week" class="dash-preset-btn px-2.5 py-1 text-xs rounded-md bg-slate-100 text-slate-700 font-medium hover:bg-blue-100">Minggu Ini</button>
+              <button onclick="setDashPreset('month')" id="dash-btn-month" class="dash-preset-btn px-2.5 py-1 text-xs rounded-md bg-slate-100 text-slate-700 font-medium hover:bg-blue-100">Bulan Ini</button>
+              <button onclick="setDashPreset('year')" id="dash-btn-year" class="dash-preset-btn px-2.5 py-1 text-xs rounded-md bg-slate-100 text-slate-700 font-medium hover:bg-blue-100">Tahun Ini</button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 pt-1 text-xs">
+            <div>
+              <label class="block font-semibold text-slate-500 mb-1">Pilih Tahun:</label>
+              <select id="dash-select-tahun" onchange="onDashTahunChange()" class="w-full px-2.5 py-1.5 border rounded-lg bg-slate-50 font-bold text-blue-700 outline-none"></select>
+            </div>
+            <div>
+              <label class="block font-semibold text-slate-500 mb-1">Pilih Bulan (Opsional):</label>
+              <select id="dash-select-bulan" onchange="onDashBulanChange()" class="w-full px-2.5 py-1.5 border rounded-lg bg-slate-50 font-medium text-slate-700 outline-none">
+                <option value="ALL">Semua Bulan</option>
+                <option value="01">Januari</option>
+                <option value="02">Februari</option>
+                <option value="03">Maret</option>
+                <option value="04">April</option>
+                <option value="05">Mei</option>
+                <option value="06">Juni</option>
+                <option value="07">Juli</option>
+                <option value="08">Agustus</option>
+                <option value="09">September</option>
+                <option value="10">Oktober</option>
+                <option value="11">November</option>
+                <option value="12">Desember</option>
+              </select>
+            </div>
+            <div>
+              <label class="block font-semibold text-slate-500 mb-1">Dari - Sampai Tanggal:</label>
+              <div class="flex items-center gap-1">
+                <input type="date" id="dash-start-date" onchange="onDashCustomDateChange()" class="w-1/2 px-1.5 py-1 border rounded text-[11px] bg-white">
+                <span class="text-slate-400">-</span>
+                <input type="date" id="dash-end-date" onchange="onDashCustomDateChange()" class="w-1/2 px-1.5 py-1 border rounded text-[11px] bg-white">
+              </div>
+            </div>
+            <div class="flex items-end">
+              <button onclick="setDashPreset('all')" class="w-full py-1.5 px-3 border border-slate-300 text-slate-600 hover:bg-slate-100 rounded-lg font-medium flex items-center justify-center gap-1.5 transition">
+                <i class="ph ph-arrow-counter-clockwise"></i> Reset ke Semua
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+            <span class="text-xs text-slate-500 uppercase font-semibold">Total Dana Masuk</span>
+            <div class="text-2xl font-black text-emerald-600 mt-1" id="dash-total-masuk">Rp 0</div>
+          </div>
+          <div class="bg-white p-4 rounded-xl border border-rose-200 shadow-sm bg-rose-50/20">
+            <span class="text-xs text-rose-700 uppercase font-bold">Pengeluaran Global</span>
+            <div class="text-2xl font-black text-rose-600 mt-1" id="dash-total-keluar">Rp 0</div>
+          </div>
+          <div class="bg-blue-50 p-4 rounded-xl border border-blue-200 shadow-sm">
+            <span class="text-xs text-blue-800 uppercase font-bold">Surplus Bersih Kas</span>
+            <div class="text-2xl font-black text-blue-900 mt-1" id="dash-surplus-total">Rp 0</div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+          <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+            <span class="font-bold text-slate-600">Saldo RT 01</span>
+            <div class="text-lg font-bold text-blue-700 mt-1" id="saldo-rt1">Rp 0</div>
+            <div class="border-t mt-1 pt-1 text-[11px] text-purple-700">Setor 10%: <span id="setor-rt1">-Rp 0</span></div>
+          </div>
+          <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+            <span class="font-bold text-slate-600">Saldo RT 02</span>
+            <div class="text-lg font-bold text-emerald-700 mt-1" id="saldo-rt2">Rp 0</div>
+            <div class="border-t mt-1 pt-1 text-[11px] text-purple-700">Setor 10%: <span id="setor-rt2">-Rp 0</span></div>
+          </div>
+          <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+            <span class="font-bold text-slate-600">Saldo RT 03</span>
+            <div class="text-lg font-bold text-indigo-700 mt-1" id="saldo-rt3">Rp 0</div>
+            <div class="border-t mt-1 pt-1 text-[11px] text-purple-700">Setor 10%: <span id="setor-rt3">-Rp 0</span></div>
+          </div>
+          <div class="bg-purple-50 p-4 rounded-xl border border-purple-200 shadow-sm">
+            <span class="font-bold text-purple-800">Kas RW 05</span>
+            <div class="text-lg font-bold text-purple-900 mt-1" id="saldo-rw">Rp 0</div>
+            <div class="border-t border-purple-200 mt-1 pt-1 text-[11px] text-purple-700">Masuk 10%: <span id="total-setoran-rt">+Rp 0</span></div>
+          </div>
+        </div>
+
+        <div class="bg-white p-4 rounded-xl border">
+          <div class="h-60 relative"><canvas id="chartPerbandingan"></canvas></div>
+        </div>
+      </section>
+
+      <!-- ======================================================== -->
+      <!-- 2. REKAP TUTUP BUKU 10% BULANAN                          -->
+      <!-- ======================================================== -->
+      <section id="page-tutup-buku" class="page-content hidden space-y-4">
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-3">
+          <div class="border-b pb-3">
+            <h3 class="text-base font-bold text-slate-800 flex items-center gap-2">
+              <i class="ph-bold ph-calendar-check text-amber-500 text-xl"></i> Rekap Tutup Buku Akhir Bulan (Aturan 10% RW)
+            </h3>
+            <p class="text-xs text-slate-500 mt-1">
+              Potongan 10% otomatis dihitung dari <b>Surplus Operasional Positif</b> tiap bulan. Saldo awal kebal potongan.
+            </p>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-100 text-slate-700 font-semibold border-b">
+                <tr>
+                  <th class="p-3">Periode</th>
+                  <th class="p-3">Wilayah</th>
+                  <th class="p-3 text-right">Pemasukan Ops</th>
+                  <th class="p-3 text-right">Pengeluaran</th>
+                  <th class="p-3 text-right">Surplus Bulanan</th>
+                  <th class="p-3 text-right text-purple-700 font-bold">Potongan 10% RW</th>
+                  <th class="p-3 text-right text-emerald-700 font-bold">Hak Kas RT (90%)</th>
+                </tr>
+              </thead>
+              <tbody id="tutup-buku-body" class="divide-y divide-slate-100"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================== -->
+      <!-- 3. DATA INDUK WARGA PER RT (SUPPORT KK PEREMPUAN/JANDA)  -->
+      <!-- ======================================================== -->
+      <section id="page-induk-rt" class="page-content hidden space-y-5">
+        <div class="bg-gradient-to-r from-emerald-700 to-teal-800 p-5 rounded-2xl text-white shadow-md flex flex-wrap justify-between items-center gap-3">
+          <div>
+            <h3 class="text-base md:text-lg font-bold flex items-center gap-2">
+              <i class="ph-fill ph-identification-badge text-amber-300 text-2xl"></i> Data Induk Keluarga Tiap RT
+            </h3>
+            <p class="text-xs text-emerald-100 mt-0.5">Mendukung Kepala Keluarga Laki-Laki maupun Perempuan (Janda/Ibu Tunggal) secara akurat.</p>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button onclick="toggleUploadExcelWarga()" class="px-3 py-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 transition shadow">
+              <i class="ph-bold ph-microsoft-excel-logo text-base"></i> Upload Data Excel
+            </button>
+            <button onclick="bukaFormTambahWarga()" class="px-3 py-2 bg-amber-400 hover:bg-amber-500 text-slate-900 font-bold text-xs rounded-xl flex items-center gap-1.5 transition shadow">
+              <i class="ph-bold ph-plus-circle text-base"></i> Input Keluarga Baru
+            </button>
+          </div>
+        </div>
+
+        <!-- Panel Upload Excel Warga -->
+        <div id="panel-upload-warga" class="bg-white p-5 rounded-xl border border-emerald-300 shadow-sm hidden space-y-3 no-print">
+          <div class="flex items-center justify-between border-b pb-2">
+            <h4 class="text-sm font-bold text-emerald-900 flex items-center gap-1.5">
+              <i class="ph-bold ph-file-arrow-up text-emerald-600 text-lg"></i> Import Data Warga Massal dari Excel (Tanpa Foto)
+            </h4>
+            <button onclick="toggleUploadExcelWarga()" class="text-slate-400 hover:text-slate-600"><i class="ph ph-x text-lg"></i></button>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+            <div class="bg-slate-50 p-4 rounded-xl border space-y-2 flex flex-col justify-between">
+              <div>
+                <span class="font-bold text-emerald-700 block">Langkah 1: Unduh Format Template</span>
+                <p class="text-slate-500 text-[11px] mt-0.5">Template sudah menyertakan Jenis Kelamin KK (Laki-laki/Perempuan) dan rincian anak.</p>
+              </div>
+              <button onclick="downloadTemplateExcelWarga()" class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg flex items-center justify-center gap-1.5 shadow">
+                <i class="ph-bold ph-download-simple"></i> Download Template Excel Warga (.xlsx)
+              </button>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-xl border space-y-2">
+              <span class="font-bold text-blue-700 block">Langkah 2: Pilih File yang Sudah Diisi</span>
+              <div class="space-y-1.5">
+                <input type="file" id="excel-warga-input" accept=".xlsx, .xls, .csv" class="w-full text-xs">
+                <div class="flex gap-3 text-[11px]">
+                  <label class="flex items-center gap-1 cursor-pointer"><input type="radio" name="mode-import-warga" value="merge" checked> Tambahkan</label>
+                  <label class="flex items-center gap-1 text-rose-600 font-bold cursor-pointer"><input type="radio" name="mode-import-warga" value="replace"> Timpa Semua</label>
+                </div>
+              </div>
+              <button onclick="prosesImportExcelWarga()" class="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg flex items-center justify-center gap-1.5 shadow">
+                <i class="ph-bold ph-check"></i> Proses & Masukkan Data Warga
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Form Tambah / Edit Kepala Keluarga (Support Janda / KK Perempuan) -->
+        <div id="form-induk-container" class="bg-white p-5 rounded-xl border border-emerald-300 shadow-sm hidden space-y-3 no-print">
+          <div class="flex items-center justify-between border-b pb-2">
+            <h4 class="text-sm font-bold text-emerald-900 flex items-center gap-1.5" id="form-induk-title">
+              <i class="ph-bold ph-user-plus text-emerald-700"></i> Formulir Pendataan Kepala Keluarga
+            </h4>
+            <span id="badge-edit-mode" class="hidden px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800">Mode Edit</span>
+          </div>
+          
+          <form onsubmit="handleIndukRTSubmit(event)" class="space-y-3 text-xs">
+            <input type="hidden" id="induk-rt-edit-id" value="">
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block font-semibold text-slate-600 mb-1">Wilayah RT</label>
+                <select id="induk-rt-wilayah" class="w-full px-2.5 py-2 border rounded-lg font-bold text-blue-700">
+                  <option value="RT 01">RT 01</option>
+                  <option value="RT 02">RT 02</option>
+                  <option value="RT 03">RT 03</option>
+                </select>
+              </div>
+              <div>
+                <label class="block font-semibold text-slate-600 mb-1">Nomor Kartu Keluarga (KK)</label>
+                <input type="text" maxlength="16" required id="induk-rt-nokk" placeholder="16 Digit No KK" class="w-full px-2.5 py-2 border rounded-lg font-mono">
+              </div>
+            </div>
+
+            <!-- STATUS SOSIAL EKONOMI -->
+            <div class="bg-amber-50/70 border border-amber-200 p-3.5 rounded-xl space-y-2">
+              <span class="block font-bold text-amber-900 text-xs">Status Kesejahteraan & Kepesertaan Bantuan (Bisa Merangkap):</span>
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                <div class="space-y-1">
+                  <label class="block font-semibold text-slate-600 text-[11px]">Tingkat Ekonomi:</label>
+                  <select id="induk-rt-ekonomi" class="w-full px-2 py-1.5 border rounded-lg bg-white font-semibold text-slate-800">
+                    <option value="Pra Sejahtera">Pra Sejahtera (Rentan/Miskin)</option>
+                    <option value="Sejahtera">Sejahtera (Mampu)</option>
+                  </select>
+                </div>
+                <div class="flex items-center gap-2 pt-4">
+                  <input type="checkbox" id="induk-rt-is-rutilahu" class="w-4 h-4 text-rose-600 rounded">
+                  <label for="induk-rt-is-rutilahu" class="font-bold text-rose-700 cursor-pointer">Rumah Rutilahu</label>
+                </div>
+                <div class="space-y-1">
+                  <div class="flex items-center gap-2">
+                    <input type="checkbox" id="induk-rt-is-bansos" onchange="toggleBansosDetail(this)" class="w-4 h-4 text-blue-600 rounded">
+                    <label for="induk-rt-is-bansos" class="font-bold text-blue-700 cursor-pointer">Penerima Bansos</label>
+                  </div>
+                  <input type="text" id="induk-rt-jenis-bansos" placeholder="Sebutkan: PKH / BPNT" class="w-full px-2 py-1 border rounded-lg bg-white hidden text-[11px]">
+                </div>
+              </div>
+            </div>
+
+            <!-- DATA KEPALA KELUARGA (DENGAN PILIHAN LAKI-LAKI ATAU PEREMPUAN/JANDA) -->
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200">
+              <div class="sm:col-span-1">
+                <label class="block font-semibold text-slate-700 mb-1">Jenis Kelamin KK:</label>
+                <select id="induk-rt-gender-kk" onchange="onGenderKKChange(this.value)" class="w-full px-2 py-2 border rounded-lg font-bold text-slate-800 bg-white">
+                  <option value="L">Laki-Laki (Suami/Bapak)</option>
+                  <option value="P">Perempuan (Janda / Ibu Tunggal)</option>
+                </select>
+              </div>
+              <div class="sm:col-span-1">
+                <label class="block font-semibold text-slate-700 mb-1">Nama Kepala Keluarga</label>
+                <input type="text" required id="induk-rt-namakk" placeholder="Nama Lengkap KK" class="w-full px-2.5 py-2 border rounded-lg font-bold">
+              </div>
+              <div class="sm:col-span-1">
+                <label class="block font-semibold text-slate-700 mb-1">NIK KTP Kepala Keluarga</label>
+                <input type="text" maxlength="16" required id="induk-rt-nikkk" placeholder="16 Digit NIK KK" class="w-full px-2.5 py-2 border rounded-lg font-mono">
+              </div>
+              <div class="sm:col-span-1">
+                <label class="block font-semibold text-slate-700 mb-1">Upload Foto KK</label>
+                <input type="file" id="induk-rt-foto" accept="image/*" class="w-full text-xs">
+              </div>
+            </div>
+
+            <!-- DATA PASANGAN (ISTRI / SUAMI) -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-pink-50/50 p-3 rounded-xl border border-pink-100" id="box-pasangan">
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1" id="lbl-nama-pasangan">Nama Istri / Pasangan (Kosongkan jika Janda/Single)</label>
+                <input type="text" id="induk-rt-namaistri" placeholder="Nama Pasangan" class="w-full px-2.5 py-2 border rounded-lg bg-white">
+              </div>
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1" id="lbl-nik-pasangan">NIK KTP Pasangan</label>
+                <input type="text" maxlength="16" id="induk-rt-nikistri" placeholder="16 Digit NIK Pasangan" class="w-full px-2.5 py-2 border rounded-lg font-mono bg-white">
+              </div>
+            </div>
+
+            <!-- RINCIAN ANAK LAKI-LAKI & PEREMPUAN -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-teal-50/50 p-3 rounded-xl border border-teal-200">
+              <div>
+                <div class="flex justify-between items-center mb-1">
+                  <label class="font-bold text-blue-900">Anak Laki-Laki:</label>
+                  <div class="flex items-center gap-1">
+                    <span class="text-[10px] text-slate-500">Jumlah:</span>
+                    <input type="number" min="0" value="0" id="induk-rt-jml-anak-laki" class="w-12 px-1.5 py-0.5 border rounded text-center font-bold text-blue-700 bg-white">
+                  </div>
+                </div>
+                <input type="text" id="induk-rt-nama-anak-laki" placeholder="Nama anak laki-laki (pisahkan koma)" class="w-full px-2.5 py-1.5 border rounded-lg bg-white">
+              </div>
+
+              <div>
+                <div class="flex justify-between items-center mb-1">
+                  <label class="font-bold text-pink-900">Anak Perempuan:</label>
+                  <div class="flex items-center gap-1">
+                    <span class="text-[10px] text-slate-500">Jumlah:</span>
+                    <input type="number" min="0" value="0" id="induk-rt-jml-anak-p" class="w-12 px-1.5 py-0.5 border rounded text-center font-bold text-pink-700 bg-white">
+                  </div>
+                </div>
+                <input type="text" id="induk-rt-nama-anak-p" placeholder="Nama anak perempuan (pisahkan koma)" class="w-full px-2.5 py-1.5 border rounded-lg bg-white">
+              </div>
+            </div>
+
+            <div class="flex justify-end gap-2 pt-2">
+              <button type="button" onclick="batalFormIndukRT()" class="px-4 py-2 border rounded-lg text-slate-600">Batal</button>
+              <button type="submit" id="btn-simpan-induk" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg transition shadow">Simpan Data Keluarga</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Filter & Pencarian Warga -->
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-3 no-print">
+          <div class="flex flex-wrap items-center gap-2 text-xs">
+            <span class="font-bold text-slate-600">Pilih RT:</span>
+            <select id="induk-filter-rt" onchange="renderIndukRT()" class="px-2.5 py-1.5 border rounded-lg bg-slate-50 font-bold text-blue-700 outline-none">
+              <option value="SEMUA">Semua RT (RW 05)</option>
+              <option value="RT 01">RT 01</option>
+              <option value="RT 02">RT 02</option>
+              <option value="RT 03">RT 03</option>
+            </select>
+            <input type="text" id="induk-cari-warga" oninput="renderIndukRT()" placeholder="Cari Nama / No KK / NIK..." class="px-3 py-1.5 border rounded-lg text-xs w-56">
+          </div>
+          <button onclick="window.print()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5">
+            <i class="ph ph-printer"></i> Cetak Dokumen PDF
+          </button>
+        </div>
+
+        <div id="induk-rt-list" class="space-y-4"></div>
+      </section>
+
+      <!-- ======================================================== -->
+      <!-- 4. RUTILAHU & BANSOS                                     -->
+      <!-- ======================================================== -->
+      <section id="page-bansos" class="page-content hidden space-y-5">
+        <div class="bg-gradient-to-r from-rose-700 to-amber-700 p-5 rounded-2xl text-white shadow-md">
+          <h3 class="text-base md:text-lg font-bold flex items-center gap-2">
+            <i class="ph-fill ph-hand-heart text-amber-300 text-2xl"></i> Rekapitulasi Rutilahu & Bantuan Sosial
+          </h3>
+          <p class="text-xs text-rose-100 mt-0.5">Pemetaan keluarga Pra Sejahtera, rumah Rutilahu, dan penerima Bantuan Sosial.</p>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div class="bg-white p-4 rounded-xl border border-amber-200 shadow-sm text-center">
+            <span class="text-[11px] font-bold text-amber-700 uppercase">Pra Sejahtera</span>
+            <div class="text-2xl font-black text-amber-800 mt-1" id="stat-prasejahtera">0</div>
+          </div>
+          <div class="bg-white p-4 rounded-xl border border-rose-200 shadow-sm text-center">
+            <span class="text-[11px] font-bold text-rose-700 uppercase">Keluarga Rutilahu</span>
+            <div class="text-2xl font-black text-rose-800 mt-1" id="stat-rutilahu">0</div>
+          </div>
+          <div class="bg-white p-4 rounded-xl border border-blue-200 shadow-sm text-center">
+            <span class="text-[11px] font-bold text-blue-700 uppercase">Penerima Bansos</span>
+            <div class="text-2xl font-black text-blue-800 mt-1" id="stat-bansos">0</div>
+          </div>
+          <div class="bg-white p-4 rounded-xl border border-purple-200 shadow-sm text-center">
+            <span class="text-[11px] font-bold text-purple-700 uppercase">Pra Sej + Rutilahu</span>
+            <div class="text-2xl font-black text-purple-800 mt-1" id="stat-merangkap">0</div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden p-4 md:p-6 print-page-break">
+          <div class="border-b pb-3 mb-3 text-center">
+            <h4 class="text-sm md:text-base font-bold uppercase text-slate-900">DATA KELUARGA PRA SEJAHTERA, RUTILAHU & BANSOS</h4>
+            <p class="text-xs text-slate-600">Lingkungan RW 05 Babakan Tengah - Kel. Adiarsa Timur</p>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs md:text-sm">
+              <thead class="bg-slate-100 text-slate-700 font-semibold border-b">
+                <tr>
+                  <th class="p-3">Foto</th>
+                  <th class="p-3">Wilayah</th>
+                  <th class="p-3">Nama Kepala Keluarga</th>
+                  <th class="p-3">Nomor KK</th>
+                  <th class="p-3">Status Ekonomi</th>
+                  <th class="p-3">Kondisi Rumah</th>
+                  <th class="p-3">Bantuan Sosial</th>
+                </tr>
+              </thead>
+              <tbody id="bansos-table-body" class="divide-y divide-slate-100"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================== -->
+      <!-- 5. STATISTIK KEPENDUDUKAN (HITUNG TEPAT L & P)           -->
+      <!-- ======================================================== -->
+      <section id="page-warga" class="page-content hidden space-y-5">
+        
+        <div class="bg-gradient-to-r from-teal-700 to-emerald-800 p-5 rounded-2xl text-white shadow-md flex flex-wrap justify-between items-center gap-3">
+          <div>
+            <h3 class="text-base md:text-lg font-bold flex items-center gap-2">
+              <i class="ph-fill ph-users-three text-amber-300 text-2xl"></i> Statistik Kependudukan RW 05
+            </h3>
+            <p class="text-xs text-emerald-100 mt-0.5">Data warga tetap otomatis tersinkronisasi dari Buku Induk Warga (Menghitung Kepala Keluarga L/P & Anak).</p>
+          </div>
+          <button onclick="toggleFormWarga()" class="px-3.5 py-2 bg-amber-400 hover:bg-amber-500 text-slate-900 font-bold text-xs rounded-xl flex items-center gap-1.5 transition shadow">
+            <i class="ph-bold ph-pencil-simple text-base"></i> Update Dinamika & Ngontrak
+          </button>
+        </div>
+
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-3 no-print">
+          <div class="flex items-center gap-2 text-xs">
+            <span class="font-bold text-slate-600">Pilih Periode Bulan:</span>
+            <select id="warga-filter-bulan" onchange="renderDataWarga()" class="px-3 py-1.5 border rounded-lg bg-slate-50 font-bold text-teal-800 outline-none"></select>
+          </div>
+          <button onclick="window.print()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5">
+            <i class="ph ph-printer"></i> Cetak Rekap Warga (PDF)
+          </button>
+        </div>
+
+        <div class="bg-teal-50 border border-teal-200 p-4 rounded-xl flex flex-wrap justify-between items-center gap-3">
+          <div class="flex items-center gap-2">
+            <i class="ph-fill ph-house text-teal-700 text-2xl"></i>
+            <div>
+              <span class="text-xs font-bold text-teal-900 uppercase">Total Jiwa Seluruh Lingkungan RW 05</span>
+              <p class="text-[11px] text-teal-700">Akumulasi Warga Tetap + Warga Pendatang/Ngontrak</p>
+            </div>
+          </div>
+          <div class="text-right">
+            <span class="text-2xl font-black text-teal-900" id="stat-grand-total">0</span>
+            <span class="text-xs text-teal-700 font-semibold block">Jiwa Keseluruhan</span>
+          </div>
+        </div>
+
+        <!-- FORM DINAMIKA & NGONTRAK -->
+        <div id="form-warga-container" class="bg-white p-5 rounded-xl border border-teal-200 shadow-sm hidden space-y-4 no-print text-xs">
+          <h4 class="text-sm font-bold text-teal-900 flex items-center gap-1.5 border-b pb-2">
+            <i class="ph-bold ph-note-pencil"></i> Formulir Dinamika Wafat, Lahir & Warga Ngontrak
+          </h4>
+          <form onsubmit="handleWargaSubmit(event)" class="space-y-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block font-semibold mb-1">Periode Bulan</label>
+                <input type="month" required id="warga-input-bulan" class="w-full px-2.5 py-2 border rounded-lg bg-white">
+              </div>
+              <div>
+                <label class="block font-semibold mb-1">Wilayah RT</label>
+                <select id="warga-input-rt" class="w-full px-2.5 py-2 border rounded-lg font-bold text-blue-700 bg-white">
+                  <option value="RT 01">RT 01</option>
+                  <option value="RT 02">RT 02</option>
+                  <option value="RT 03">RT 03</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="bg-amber-50/70 p-4 rounded-xl border border-amber-200 space-y-2">
+              <span class="font-bold text-amber-900 text-xs flex items-center gap-1.5">
+                <i class="ph-bold ph-house-line"></i> Data Warga Pendatang / Ngontrak / Kos
+              </span>
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label class="block mb-1 font-semibold text-slate-700">Jumlah KK Ngontrak</label>
+                  <input type="number" min="0" value="0" required id="warga-input-kk-kontrak" placeholder="0" class="w-full px-2.5 py-1.5 border rounded-lg bg-white">
+                </div>
+                <div>
+                  <label class="block mb-1 font-semibold text-slate-700">Laki-Laki Pendatang (Jiwa)</label>
+                  <input type="number" min="0" value="0" required id="warga-input-laki-kontrak" placeholder="0" class="w-full px-2.5 py-1.5 border rounded-lg bg-white text-blue-800 font-bold">
+                </div>
+                <div>
+                  <label class="block mb-1 font-semibold text-slate-700">Perempuan Pendatang (Jiwa)</label>
+                  <input type="number" min="0" value="0" required id="warga-input-perempuan-kontrak" placeholder="0" class="w-full px-2.5 py-1.5 border rounded-lg bg-white text-pink-800 font-bold">
+                </div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-50 p-3 rounded-xl border">
+              <div>
+                <label class="block font-semibold mb-1 text-rose-700">Warga Meninggal Dunia (Bulan Ini)</label>
+                <input type="number" min="0" value="0" required id="warga-input-meninggal" class="w-full px-2.5 py-1.5 border rounded-lg bg-white text-rose-600 font-bold">
+              </div>
+              <div>
+                <label class="block font-semibold mb-1 text-emerald-700">Warga Baru Lahir (Bulan Ini)</label>
+                <input type="number" min="0" value="0" required id="warga-input-lahir" class="w-full px-2.5 py-1.5 border rounded-lg bg-white text-emerald-600 font-bold">
+              </div>
+            </div>
+
+            <div class="flex justify-end gap-2 pt-2 border-t">
+              <button type="button" onclick="toggleFormWarga()" class="px-4 py-2 border rounded-lg text-slate-600">Batal</button>
+              <button type="submit" class="px-5 py-2 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-lg shadow">Simpan</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- BAGIAN 1: REKAP WARGA TETAP (LINK OTOMATIS) -->
+        <div class="space-y-3">
+          <div class="flex items-center justify-between border-l-4 border-blue-600 pl-2">
+            <h4 class="font-bold text-slate-800 text-sm">Bagian A: Data Warga Tetap (Otomatis dari Buku Induk RT)</h4>
+            <span class="text-[11px] text-blue-700 bg-blue-50 px-2 py-0.5 rounded font-semibold">Tersinkronisasi Otomatis</span>
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+            <div class="bg-white p-3.5 rounded-xl border text-center shadow-sm">
+              <span class="text-[10px] font-bold text-slate-500 uppercase">KK Tetap</span>
+              <div class="text-xl font-black mt-0.5 text-slate-800" id="stat-tetap-kk">0</div>
+              <span class="text-[9px] text-slate-400">Keluarga</span>
+            </div>
+            <div class="bg-white p-3.5 rounded-xl border text-center shadow-sm">
+              <span class="text-[10px] font-bold text-blue-600 uppercase">Laki-Laki Tetap</span>
+              <div class="text-xl font-black mt-0.5 text-blue-700" id="stat-tetap-laki">0</div>
+              <span class="text-[9px] text-slate-400">KK Laki + Anak L</span>
+            </div>
+            <div class="bg-white p-3.5 rounded-xl border text-center shadow-sm">
+              <span class="text-[10px] font-bold text-pink-600 uppercase">Perempuan Tetap</span>
+              <div class="text-xl font-black mt-0.5 text-pink-700" id="stat-tetap-perempuan">0</div>
+              <span class="text-[9px] text-slate-400">KK Pr/Istri + Anak P</span>
+            </div>
+            <div class="bg-blue-50 p-3.5 rounded-xl border border-blue-200 text-center shadow-sm">
+              <span class="text-[10px] font-bold text-blue-800 uppercase">Total Jiwa Tetap</span>
+              <div class="text-xl font-black mt-0.5 text-blue-900" id="stat-tetap-total">0</div>
+              <span class="text-[9px] text-blue-600 font-semibold">Laki + Perempuan</span>
+            </div>
+            <div class="bg-rose-50 p-3.5 rounded-xl border border-rose-200 text-center shadow-sm col-span-2 sm:col-span-1">
+              <span class="text-[10px] font-bold text-rose-700 uppercase">Wafat / Lahir</span>
+              <div class="text-base font-black mt-1 text-rose-800" id="stat-tetap-dinamika">W: 0 | L: 0</div>
+              <span class="text-[9px] text-rose-600">Bulan Ini</span>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden p-4">
+            <span class="text-xs font-bold text-slate-700 block mb-2">Tabel Rekapitulasi Warga Tetap Tiap RT (Hasil Hitung Otomatis):</span>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs md:text-sm">
+                <thead class="bg-slate-100 text-slate-700 font-semibold border-b">
+                  <tr>
+                    <th class="p-2.5">Wilayah</th>
+                    <th class="p-2.5 text-right">Jumlah KK Tetap</th>
+                    <th class="p-2.5 text-right text-blue-700">Laki-Laki</th>
+                    <th class="p-2.5 text-right text-pink-700">Perempuan</th>
+                    <th class="p-2.5 text-right font-bold text-blue-900">Total Jiwa Tetap</th>
+                    <th class="p-2.5 text-right text-rose-600">Wafat</th>
+                    <th class="p-2.5 text-right text-emerald-600">Lahir</th>
+                  </tr>
+                </thead>
+                <tbody id="tabel-tetap-body" class="divide-y divide-slate-100"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- BAGIAN 2: REKAP WARGA PENDATANG / NGONTRAK -->
+        <div class="space-y-3 pt-2">
+          <div class="flex items-center gap-2 border-l-4 border-amber-500 pl-2">
+            <h4 class="font-bold text-slate-800 text-sm">Bagian B: Data Warga Pendatang / Ngontrak / Kos</h4>
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            <div class="bg-white p-3.5 rounded-xl border text-center shadow-sm">
+              <span class="text-[10px] font-bold text-amber-700 uppercase">KK Ngontrak</span>
+              <div class="text-xl font-black mt-0.5 text-amber-800" id="stat-kontrak-kk">0</div>
+              <span class="text-[9px] text-slate-400">Kepala Keluarga</span>
+            </div>
+            <div class="bg-white p-3.5 rounded-xl border text-center shadow-sm">
+              <span class="text-[10px] font-bold text-blue-700 uppercase">Laki-Laki Ngontrak</span>
+              <div class="text-xl font-black mt-0.5 text-blue-800" id="stat-kontrak-laki">0</div>
+              <span class="text-[9px] text-slate-400">Jiwa</span>
+            </div>
+            <div class="bg-white p-3.5 rounded-xl border text-center shadow-sm">
+              <span class="text-[10px] font-bold text-pink-700 uppercase">Perempuan Ngontrak</span>
+              <div class="text-xl font-black mt-0.5 text-pink-800" id="stat-kontrak-perempuan">0</div>
+              <span class="text-[9px] text-slate-400">Jiwa</span>
+            </div>
+            <div class="bg-amber-50 p-3.5 rounded-xl border border-amber-200 text-center shadow-sm col-span-2 sm:col-span-1">
+              <span class="text-[10px] font-bold text-amber-900 uppercase">Total Jiwa Ngontrak</span>
+              <div class="text-xl font-black mt-0.5 text-amber-900" id="stat-kontrak-total">0</div>
+              <span class="text-[9px] text-amber-700 font-semibold">Laki + Perempuan</span>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden p-4">
+            <span class="text-xs font-bold text-slate-700 block mb-2">Tabel Rekapitulasi Warga Ngontrak Tiap RT:</span>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs md:text-sm">
+                <thead class="bg-amber-50 text-amber-900 font-semibold border-b border-amber-200">
+                  <tr>
+                    <th class="p-2.5">Wilayah</th>
+                    <th class="p-2.5 text-right">Jumlah KK Ngontrak</th>
+                    <th class="p-2.5 text-right text-blue-800">Laki-Laki</th>
+                    <th class="p-2.5 text-right text-pink-800">Perempuan</th>
+                    <th class="p-2.5 text-right font-bold text-amber-900">Total Jiwa Ngontrak</th>
+                  </tr>
+                </thead>
+                <tbody id="tabel-kontrak-body" class="divide-y divide-slate-100"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- SECTION 6: KEGIATAN & FOTO (LENGKAP DENGAN HAPUS) -->
+      <section id="page-kegiatan-rw" class="page-content hidden space-y-5">
+        <div class="bg-gradient-to-r from-amber-600 to-orange-700 p-5 rounded-2xl text-white shadow-md flex justify-between items-center">
+          <div><h3 class="text-base font-bold">Dokumentasi & Laporan Kegiatan RW 05</h3><p class="text-xs text-amber-100">Berita acara dan foto kegiatan warga.</p></div>
+          <button onclick="toggleFormKegiatan()" class="px-3 py-2 bg-white text-slate-900 font-bold text-xs rounded-xl shadow">Tulis Laporan</button>
+        </div>
+        <div id="form-kegiatan-container" class="bg-white p-5 rounded-xl border border-amber-200 hidden space-y-3 no-print text-xs">
+          <form onsubmit="handleKegiatanSubmit(event)" class="space-y-3">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div><label class="block font-semibold mb-1">Tanggal</label><input type="date" required id="keg-input-tgl" class="w-full px-2.5 py-2 border rounded-lg"></div>
+              <div><label class="block font-semibold mb-1">Wilayah</label><select id="keg-input-wilayah" class="w-full px-2.5 py-2 border rounded-lg font-semibold"><option value="RW 05">RW 05</option><option value="RT 01">RT 01</option><option value="RT 02">RT 02</option><option value="RT 03">RT 03</option></select></div>
+              <div><label class="block font-semibold mb-1">Nama Acara</label><input type="text" required id="keg-input-nama" class="w-full px-2.5 py-2 border rounded-lg font-semibold"></div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div><label class="block font-semibold mb-1">Foto:</label><input type="file" id="keg-input-foto" accept="image/*" class="w-full text-xs"></div>
+              <div><label class="block font-semibold mb-1">Lokasi:</label><input type="text" id="keg-input-lokasi" class="w-full px-2.5 py-2 border rounded-lg"></div>
+            </div>
+            <div><label class="block font-semibold mb-1">Keterangan:</label><textarea id="keg-input-deskripsi" rows="3" class="w-full px-2.5 py-2 border rounded-lg"></textarea></div>
+            <div class="flex justify-end gap-2"><button type="submit" class="px-5 py-2 bg-amber-600 text-white font-bold rounded-lg">Simpan</button></div>
+          </form>
+        </div>
+        <div id="kegiatan-gallery-list" class="space-y-4"></div>
+      </section>
+
+      <!-- SECTION 7: UANG MASUK -->
+      <section id="page-masuk" class="page-content hidden space-y-4">
+        <div class="bg-white p-5 rounded-xl border max-w-xl">
+          <h3 class="text-sm font-bold text-emerald-700 mb-3">Catat Uang Masuk / Saldo Awal</h3>
+          <form onsubmit="handleFormSubmit(event, 'masuk')" class="space-y-3 text-xs">
+            <input type="date" required id="in-tanggal" class="w-full px-2.5 py-2 border rounded-lg">
+            <select id="in-entitas" class="w-full px-2.5 py-2 border rounded-lg font-bold"><option value="RT 01">RT 01</option><option value="RT 02">RT 02</option><option value="RT 03">RT 03</option><option value="RW 05">RW 05</option></select>
+            <select id="in-kategori" class="w-full px-2.5 py-2 border rounded-lg"><option value="Saldo Awal Periode (Tidak Dipotong)">★ Saldo Awal Periode (Kebal 10%)</option><option value="Iuran Warga Bulanan">Iuran Warga Bulanan</option><option value="Lainnya">Lainnya</option></select>
+            <input type="number" required min="1" placeholder="Nominal" id="in-nominal" class="w-full px-2.5 py-2 border rounded-lg">
+            <input type="text" placeholder="Keterangan..." id="in-keterangan" class="w-full px-2.5 py-2 border rounded-lg">
+            <button type="submit" class="w-full py-2 bg-emerald-600 text-white font-bold rounded-lg">Simpan</button>
+          </form>
+        </div>
+      </section>
+
+      <!-- SECTION 8: PENGELUARAN -->
+      <section id="page-keluar" class="page-content hidden space-y-4">
+        <div class="bg-white p-5 rounded-xl border max-w-xl">
+          <h3 class="text-sm font-bold text-rose-700 mb-3">Catat Pengeluaran</h3>
+          <form onsubmit="handleFormSubmit(event, 'keluar')" class="space-y-3 text-xs">
+            <input type="date" required id="out-tanggal" class="w-full px-2.5 py-2 border rounded-lg">
+            <select id="out-entitas" class="w-full px-2.5 py-2 border rounded-lg font-bold"><option value="RT 01">RT 01</option><option value="RT 02">RT 02</option><option value="RT 03">RT 03</option><option value="RW 05">RW 05</option></select>
+            <select id="out-kategori" class="w-full px-2.5 py-2 border rounded-lg"><option value="PHBN & 17 Agustusan">PHBN & 17 Agustusan</option><option value="Kerja Bakti">Kerja Bakti</option><option value="Lainnya">Lainnya</option></select>
+            <input type="number" required min="1" placeholder="Nominal" id="out-nominal" class="w-full px-2.5 py-2 border rounded-lg">
+            <input type="text" placeholder="Keterangan..." id="out-keterangan" class="w-full px-2.5 py-2 border rounded-lg">
+            <button type="submit" class="w-full py-2 bg-rose-600 text-white font-bold rounded-lg">Simpan</button>
+          </form>
+        </div>
+      </section>
+
+      <!-- SECTION 9: LAPORAN KAS -->
+      <section id="page-laporan" class="page-content hidden space-y-4">
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3 no-print">
+          <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3 text-xs">
+            <span class="font-bold text-slate-700 uppercase">Filter Laporan Kas (Tarik Per RT)</span>
+          </div>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+            <div>
+              <label class="block font-semibold text-slate-500 mb-1">Wilayah RT/RW</label>
+              <select id="filter-entitas" onchange="renderLaporan()" class="w-full px-2 py-1.5 border rounded-lg bg-white font-bold text-blue-700">
+                <option value="SEMUA">Semua Wilayah</option>
+                <option value="RT 01">Hanya RT 01</option>
+                <option value="RT 02">Hanya RT 02</option>
+                <option value="RT 03">Hanya RT 03</option>
+                <option value="RW 05">Hanya RW 05</option>
+              </select>
+            </div>
+            <div>
+              <label class="block font-semibold text-slate-500 mb-1">Tipe Transaksi</label>
+              <select id="filter-tipe" onchange="renderLaporan()" class="w-full px-2 py-1.5 border rounded-lg bg-white">
+                <option value="SEMUA">Semua</option>
+                <option value="masuk">Masuk Saja</option>
+                <option value="keluar">Keluar Saja</option>
+              </select>
+            </div>
+            <div>
+              <label class="block font-semibold text-slate-500 mb-1">Dari Tanggal</label>
+              <input type="date" id="filter-start" onchange="renderLaporan()" class="w-full px-2 py-1 border rounded-lg">
+            </div>
+            <div>
+              <label class="block font-semibold text-slate-500 mb-1">Sampai Tanggal</label>
+              <input type="date" id="filter-end" onchange="renderLaporan()" class="w-full px-2 py-1 border rounded-lg">
+            </div>
+          </div>
+          <div class="flex justify-between items-center pt-2 border-t">
+            <span class="text-xs text-slate-500" id="filter-summary-info">Menampilkan data</span>
+            <div class="flex gap-2">
+              <button onclick="eksporExcelFiltered()" class="px-3 py-1.5 bg-emerald-700 text-white rounded-lg text-xs font-semibold">Unduh Excel</button>
+              <button onclick="window.print()" class="px-3 py-1.5 bg-slate-800 text-white rounded-lg text-xs font-semibold">Cetak PDF</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="print-area" class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 md:p-6">
+          <div class="border-b-2 border-slate-800 pb-3 mb-4 flex items-center justify-between gap-4">
+            <img id="print-kop-logo" src="https://api.iconify.design/ph:buildings-fill.svg?color=%23f59e0b" class="w-14 h-14 object-contain">
+            <div class="text-center flex-1">
+              <h2 class="text-base font-extrabold uppercase text-slate-900" id="print-kop-title">LAPORAN KAS RW 05</h2>
+              <p class="text-xs font-semibold text-slate-700" id="print-kop-sublingkungan">Lingkungan Babakan Tengah - RW 05</p>
+              <p class="text-[11px] text-slate-600" id="print-kop-wilayah">Kelurahan Adiarsa Timur, Kecamatan Karawang Timur</p>
+            </div>
+            <div class="w-14"></div>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs md:text-sm">
+              <thead class="bg-slate-100 text-slate-700 font-semibold border-b">
+                <tr>
+                  <th class="p-2.5">Tanggal</th>
+                  <th class="p-2.5">Wilayah</th>
+                  <th class="p-2.5">Kategori</th>
+                  <th class="p-2.5">Keterangan</th>
+                  <th class="p-2.5 text-right">Masuk</th>
+                  <th class="p-2.5 text-right">Keluar</th>
+                  <th class="p-2.5 text-center no-print">Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="tx-table-body" class="divide-y divide-slate-100"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 10: IMPORT EXCEL KAS -->
+      <section id="page-excel" class="page-content hidden space-y-4">
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-3">
+          <h3 class="text-sm font-bold text-slate-800">Import / Upload Excel Transaksi Kas</h3>
+          <div class="flex gap-2">
+            <button onclick="downloadTemplateExcel()" class="py-2 px-3 bg-emerald-600 text-white rounded-lg text-xs font-semibold">Download Format Template Kas</button>
+          </div>
+          <input type="file" id="excel-file-input" accept=".xlsx, .xls, .csv" class="text-xs">
+          <button onclick="prosesImportExcel()" id="btn-proses-import" class="py-2 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold">Proses Data Excel</button>
+        </div>
+      </section>
+
+      <!-- SECTION 11: CADANGKAN & PULIHKAN -->
+      <section id="page-backup" class="page-content hidden space-y-4">
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-3 text-xs">
+          <h3 class="text-sm font-bold text-slate-800">Cadangkan Seluruh Data (Kas, Warga, Ngontrak & Foto)</h3>
+          <p class="text-slate-500">Unduh berkas JSON untuk cadangan atau dipindahkan ke komputer/laptop lain.</p>
+          <div class="flex flex-wrap gap-2 pt-2">
+            <button onclick="unduhCadanganJSON()" class="py-2.5 px-4 bg-cyan-600 hover:bg-cyan-700 text-white font-bold rounded-lg text-xs">Unduh Cadangan Lengkap (.json)</button>
+            <label class="py-2.5 px-4 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-lg text-xs cursor-pointer">
+              Pulihkan Berkas (.json)
+              <input type="file" accept=".json" onchange="pulihkanDataJSON(event)" class="hidden">
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 12: LOG AUDIT -->
+      <section id="page-history" class="page-content hidden space-y-4">
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-2 text-xs">
+          <h3 class="text-sm font-bold text-slate-800">Riwayat Sunting & Log Aktivitas Sistem</h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left"><tbody id="history-table-body" class="divide-y divide-slate-100"></tbody></table>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 13: KEAMANAN & RESET -->
+      <section id="page-keamanan" class="page-content hidden space-y-4">
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm max-w-sm space-y-3 text-xs">
+          <h3 class="text-sm font-bold text-slate-800">Pengaturan PIN Pengurus</h3>
+          <input type="password" id="pin-old" placeholder="PIN Lama" class="w-full px-2 py-1.5 border rounded">
+          <input type="password" id="pin-new" placeholder="PIN Baru" class="w-full px-2 py-1.5 border rounded">
+          <button onclick="ubahPinPengurus()" class="w-full py-1.5 bg-blue-600 text-white font-bold rounded">Simpan PIN Baru</button>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- MODAL IDENTITAS WILAYAH -->
+  <div id="modal-identitas" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-md w-full p-5 space-y-3 text-xs">
+      <h3 class="font-bold text-sm">Ubah Identitas Wilayah & Logo</h3>
+      <div>
+        <label class="block font-semibold mb-1">Ganti Logo Wilayah:</label>
+        <input type="file" id="modal-logo-file" accept="image/*" class="w-full text-xs">
+      </div>
+      <div>
+        <label class="block font-semibold mb-1">Nama Lingkungan / RW:</label>
+        <input type="text" id="cfg-lingkungan" placeholder="Nama RW" class="w-full px-2.5 py-1.5 border rounded">
+      </div>
+      <div>
+        <label class="block font-semibold mb-1">Kelurahan:</label>
+        <input type="text" id="cfg-kelurahan" placeholder="Kelurahan" class="w-full px-2.5 py-1.5 border rounded">
+      </div>
+      <div>
+        <label class="block font-semibold mb-1">Kecamatan:</label>
+        <input type="text" id="cfg-kecamatan" placeholder="Kecamatan" class="w-full px-2.5 py-1.5 border rounded">
+      </div>
+      <div class="flex gap-2 pt-2">
+        <button onclick="tutupModalIdentitas()" class="w-1/2 py-2 bg-slate-100 rounded font-semibold">Batal</button>
+        <button onclick="simpanPengaturanIdentitas()" class="w-1/2 py-2 bg-blue-600 text-white font-bold rounded">Simpan Perubahan</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const nowSystem = new Date();
+    const currentYear = nowSystem.getFullYear();
+    const todayStr = nowSystem.toISOString().split('T')[0];
+    const currentMonthStr = todayStr.substring(0, 7);
+
+    document.getElementById('in-tanggal').value = todayStr;
+    document.getElementById('out-tanggal').value = todayStr;
+    document.getElementById('keg-input-tgl').value = todayStr;
+    document.getElementById('warga-input-bulan').value = currentMonthStr;
+
+    const STORAGE_KEY = 'KAS_RT_RW_05_TUTUP_BUKU_DATA';
+    const PIN_KEY = 'KAS_RT_RW_SECURITY_PIN';
+    const HISTORY_KEY = 'KAS_RT_RW_AUDIT_LOG';
+    const IDENTITAS_KEY = 'KAS_RT_RW_IDENTITAS_CONFIG';
+    const WARGA_KEY = 'KAS_RT_RW_DATA_WARGA_V2';
+    const KEGIATAN_KEY = 'KAS_RT_RW_DOKUMENTASI_KEGIATAN';
+    const INDUK_RT_KEY = 'KAS_RT_RW_INDUK_WARGA_RT';
+
+    let identitasConfig = JSON.parse(localStorage.getItem(IDENTITAS_KEY)) || {
+      logo: 'https://api.iconify.design/ph:buildings-fill.svg?color=%23f59e0b',
+      lingkungan: 'RW 05 Babakan Tengah',
+      kelurahan: 'Kel. Adiarsa Timur',
+      kecamatan: 'Kec. Karawang Timur'
+    };
+
+    if (!localStorage.getItem(PIN_KEY)) localStorage.setItem(PIN_KEY, '1234');
+
+    let auditLog = JSON.parse(localStorage.getItem(HISTORY_KEY)) || [
+      { waktu: '04/10/2026 08:00 WIB', aksi: 'Sistem Dimulai', detail: 'Inisialisasi sistem kas & kependudukan terpadu.' }
+    ];
+
+    // DATA INDUK KELUARGA LENGKAP GENDER KK
+    let dataIndukRTList = JSON.parse(localStorage.getItem(INDUK_RT_KEY)) || [
+      {
+        id: 1, rt: 'RT 01',
+        genderKK: 'L', namaKK: 'Ahmad Sudrajat', noKK: '3215012304050001', nikKK: '3215011005800002',
+        namaIstri: 'Siti Aminah', nikIstri: '3215015206850004',
+        jmlAnakLaki: 1, namaAnakLaki: 'Rizky Sudrajat',
+        jmlAnakP: 1, namaAnakP: 'Nurul Aini',
+        statusEkonomi: 'Sejahtera', isRutilahu: false, isBansos: false, jenisBansos: '-', foto: ''
+      },
+      {
+        id: 2, rt: 'RT 02',
+        genderKK: 'P', namaKK: 'Ibu Hj. Aminah (Janda)', noKK: '3215012304050099', nikKK: '3215015509650001',
+        namaIstri: '-', nikIstri: '-',
+        jmlAnakLaki: 1, namaAnakLaki: 'Dimas Irawan',
+        jmlAnakP: 1, namaAnakP: 'Putri Lestari',
+        statusEkonomi: 'Pra Sejahtera', isRutilahu: true, isBansos: true, jenisBansos: 'PKH', foto: ''
+      }
+    ];
+
+    let dataWargaDinamika = JSON.parse(localStorage.getItem(WARGA_KEY)) || [
+      { id: 1, bulan: '2026-10', rt: 'RT 01', kkKontrak: 12, lakiKontrak: 15, perempuanKontrak: 18, meninggal: 0, lahir: 1 },
+      { id: 2, bulan: '2026-10', rt: 'RT 02', kkKontrak: 20, lakiKontrak: 28, perempuanKontrak: 25, meninggal: 1, lahir: 0 },
+      { id: 3, bulan: '2026-10', rt: 'RT 03', kkKontrak: 15, lakiKontrak: 19, perempuanKontrak: 21, meninggal: 0, lahir: 1 }
+    ];
+
+    let transaksi = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [
+      { id: 1, tanggal: '2026-01-01', tipe: 'masuk', entitas: 'RT 01', kategori: 'Saldo Awal Periode (Tidak Dipotong)', keterangan: 'Saldo sisa kas 2025', nominal: 2500000 },
+      { id: 2, tanggal: '2026-01-10', tipe: 'masuk', entitas: 'RT 01', kategori: 'Iuran Warga Bulanan', keterangan: 'Iuran Januari (30 KK)', nominal: 600000 },
+      { id: 3, tanggal: '2026-01-15', tipe: 'keluar', entitas: 'RT 01', kategori: 'Kerja Bakti', keterangan: 'Beli 3 lampu LED gang', nominal: 150000 }
+    ];
+
+    let dataKegiatanList = JSON.parse(localStorage.getItem(KEGIATAN_KEY)) || [];
+    let chartBarInstance = null;
+    let dashFilter = { mode: 'all', startDate: '', endDate: '' };
+
+    function formatRupiah(n) { return 'Rp ' + Number(n || 0).toLocaleString('id-ID'); }
+    function formatBulanTahun(strYYYYMM) {
+      if (!strYYYYMM) return '-';
+      const parts = strYYYYMM.split('-');
+      const namaBulan = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+      const bIdx = parseInt(parts[1]) - 1;
+      return `${namaBulan[bIdx]} ${parts[0]}`;
+    }
+
+    function onGenderKKChange(val) {
+      const lbl1 = document.getElementById('lbl-nama-pasangan');
+      const lbl2 = document.getElementById('lbl-nik-pasangan');
+      if (val === 'P') {
+        lbl1.innerText = 'Nama Suami (Kosongkan jika Janda/Ibu Tunggal):';
+        lbl2.innerText = 'NIK KTP Suami:';
+      } else {
+        lbl1.innerText = 'Nama Istri (Kosongkan jika Duda/Single):';
+        lbl2.innerText = 'NIK KTP Istri:';
+      }
+    }
+
+    // LOGO
+    function applyIdentitasWilayah() {
+      const img1 = document.getElementById('app-logo-img');
+      const img2 = document.getElementById('topbar-logo');
+      const img3 = document.getElementById('print-kop-logo');
+      if (img1) img1.src = identitasConfig.logo;
+      if (img2) img2.src = identitasConfig.logo;
+      if (img3) img3.src = identitasConfig.logo;
+
+      const eLing = document.getElementById('disp-nama-lingkungan');
+      const eKel = document.getElementById('disp-nama-kelurahan');
+      const eKec = document.getElementById('disp-nama-kecamatan');
+      const eSub = document.getElementById('topbar-sub');
+      const eKopLing = document.getElementById('print-kop-sublingkungan');
+      const eKopWil = document.getElementById('print-kop-wilayah');
+
+      if (eLing) eLing.innerText = identitasConfig.lingkungan;
+      if (eKel) eKel.innerText = identitasConfig.kelurahan;
+      if (eKec) eKec.innerText = identitasConfig.kecamatan;
+      if (eSub) eSub.innerText = `${identitasConfig.lingkungan}, ${identitasConfig.kelurahan}`;
+      if (eKopLing) eKopLing.innerText = `Lingkungan ${identitasConfig.lingkungan}`;
+      if (eKopWil) eKopWil.innerText = `${identitasConfig.kelurahan}, ${identitasConfig.kecamatan}`;
+    }
+
+    function uploadLogoLangsung(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        identitasConfig.logo = e.target.result;
+        localStorage.setItem(IDENTITAS_KEY, JSON.stringify(identitasConfig));
+        applyIdentitasWilayah();
+        alert('Logo wilayah berhasil diperbarui!');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function bukaModalIdentitas() {
+      document.getElementById('cfg-lingkungan').value = identitasConfig.lingkungan;
+      document.getElementById('cfg-kelurahan').value = identitasConfig.kelurahan;
+      document.getElementById('cfg-kecamatan').value = identitasConfig.kecamatan;
+      document.getElementById('modal-identitas').classList.remove('hidden');
+    }
+
+    function tutupModalIdentitas() { document.getElementById('modal-identitas').classList.add('hidden'); }
+
+    function simpanPengaturanIdentitas() {
+      identitasConfig.lingkungan = document.getElementById('cfg-lingkungan').value.trim() || identitasConfig.lingkungan;
+      identitasConfig.kelurahan = document.getElementById('cfg-kelurahan').value.trim() || identitasConfig.kelurahan;
+      identitasConfig.kecamatan = document.getElementById('cfg-kecamatan').value.trim() || identitasConfig.kecamatan;
+      const fileLogo = document.getElementById('modal-logo-file').files[0];
+
+      if (fileLogo) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          identitasConfig.logo = e.target.result;
+          localStorage.setItem(IDENTITAS_KEY, JSON.stringify(identitasConfig));
+          applyIdentitasWilayah();
+          tutupModalIdentitas();
+          alert('Identitas wilayah & logo berhasil diperbarui!');
+        };
+        reader.readAsDataURL(fileLogo);
+      } else {
+        localStorage.setItem(IDENTITAS_KEY, JSON.stringify(identitasConfig));
+        applyIdentitasWilayah();
+        tutupModalIdentitas();
+        alert('Identitas wilayah berhasil diperbarui!');
+      }
+    }
+
+    // NAVIGASI
+    function toggleSidebar() {
+      const sb = document.getElementById('sidebar');
+      const ov = document.getElementById('sidebar-overlay');
+      if (sb) sb.classList.toggle('-translate-x-full');
+      if (ov) ov.classList.toggle('hidden');
+    }
+
+    function pindahMenu(menuId) {
+      document.querySelectorAll('.page-content').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.menu-btn').forEach(btn => {
+        btn.classList.remove('bg-blue-600', 'text-white');
+        btn.classList.add('text-slate-300');
+      });
+
+      const targetPage = document.getElementById('page-' + menuId);
+      const targetBtn = document.getElementById('btn-' + menuId);
+
+      if (targetPage) targetPage.classList.remove('hidden');
+      if (targetBtn) {
+        targetBtn.classList.add('bg-blue-600', 'text-white');
+        targetBtn.classList.remove('text-slate-300');
+      }
+
+      const titles = {
+        'dashboard': 'Dashboard Saldo Kas',
+        'tutup-buku': 'Tutup Buku 10% Bulanan',
+        'induk-rt': 'Data Warga Per RT & Import',
+        'bansos': 'Rutilahu & Bantuan Sosial',
+        'warga': 'Statistik Warga & Ngontrak',
+        'kegiatan-rw': 'Laporan Kegiatan & Foto',
+        'masuk': 'Catat Uang Masuk / Saldo Awal',
+        'keluar': 'Catat Pengeluaran',
+        'laporan': 'Laporan Kas (Tarik Per RT)',
+        'excel': 'Import / Upload Kas Excel',
+        'backup': 'Cadangkan & Pulihkan Data',
+        'history': 'Riwayat Edit & Log Audit',
+        'keamanan': 'Pengaturan PIN & Otoritas'
+      };
+
+      const titleEl = document.getElementById('topbar-title');
+      if (titleEl) titleEl.innerText = titles[menuId] || 'Sistem RW 05';
+
+      if (window.innerWidth < 768) {
+        const sb = document.getElementById('sidebar');
+        const ov = document.getElementById('sidebar-overlay');
+        if (sb && !sb.classList.contains('-translate-x-full')) sb.classList.add('-translate-x-full');
+        if (ov && !ov.classList.contains('hidden')) ov.classList.add('hidden');
+      }
+
+      if (menuId === 'dashboard') updateDashboardDanGrafik();
+      if (menuId === 'tutup-buku') renderTutupBukuBulanan();
+      if (menuId === 'laporan') renderLaporan();
+      if (menuId === 'history') renderAuditLog();
+      if (menuId === 'bansos') renderBansos();
+      if (menuId === 'warga') renderDataWarga();
+      if (menuId === 'induk-rt') renderIndukRT();
+      if (menuId === 'kegiatan-rw') renderKegiatanRW();
+    }
+
+    // FORM INDUK WARGA
+    function toggleUploadExcelWarga() { document.getElementById('panel-upload-warga').classList.toggle('hidden'); }
+    function toggleFormWarga() { document.getElementById('form-warga-container').classList.toggle('hidden'); }
+    function toggleFormKegiatan() { document.getElementById('form-kegiatan-container').classList.toggle('hidden'); }
+    function toggleBansosDetail(cb) {
+      const inp = document.getElementById('induk-rt-jenis-bansos');
+      if (cb.checked) { inp.classList.remove('hidden'); inp.focus(); }
+      else { inp.classList.add('hidden'); inp.value = ''; }
+    }
+
+    function bukaFormTambahWarga() {
+      document.getElementById('induk-rt-edit-id').value = '';
+      document.getElementById('form-induk-title').innerHTML = '<i class="ph-bold ph-user-plus text-emerald-700"></i> Formulir Pendataan Kepala Keluarga';
+      document.getElementById('badge-edit-mode').classList.add('hidden');
+      document.getElementById('btn-simpan-induk').innerText = 'Simpan Data Keluarga';
+
+      document.getElementById('induk-rt-wilayah').value = 'RT 01';
+      document.getElementById('induk-rt-nokk').value = '';
+      document.getElementById('induk-rt-gender-kk').value = 'L';
+      onGenderKKChange('L');
+      document.getElementById('induk-rt-namakk').value = '';
+      document.getElementById('induk-rt-nikkk').value = '';
+      document.getElementById('induk-rt-namaistri').value = '';
+      document.getElementById('induk-rt-nikistri').value = '';
+      document.getElementById('induk-rt-jml-anak-laki').value = 0;
+      document.getElementById('induk-rt-nama-anak-laki').value = '';
+      document.getElementById('induk-rt-jml-anak-p').value = 0;
+      document.getElementById('induk-rt-nama-anak-p').value = '';
+      document.getElementById('induk-rt-ekonomi').value = 'Sejahtera';
+      document.getElementById('induk-rt-is-rutilahu').checked = false;
+      document.getElementById('induk-rt-is-bansos').checked = false;
+      document.getElementById('induk-rt-jenis-bansos').value = '';
+      document.getElementById('induk-rt-jenis-bansos').classList.add('hidden');
+
+      document.getElementById('form-induk-container').classList.remove('hidden');
+    }
+
+    function editDataWarga(id) {
+      const item = dataIndukRTList.find(w => w.id === id);
+      if (!item) return;
+
+      document.getElementById('induk-rt-edit-id').value = item.id;
+      document.getElementById('form-induk-title').innerHTML = '<i class="ph-bold ph-pencil-simple text-amber-600"></i> Edit Data Kepala Keluarga';
+      document.getElementById('badge-edit-mode').classList.remove('hidden');
+      document.getElementById('btn-simpan-induk').innerText = 'Perbarui Data Keluarga';
+
+      document.getElementById('induk-rt-wilayah').value = item.rt;
+      document.getElementById('induk-rt-nokk').value = item.noKK;
+      document.getElementById('induk-rt-gender-kk').value = item.genderKK || 'L';
+      onGenderKKChange(item.genderKK || 'L');
+
+      document.getElementById('induk-rt-namakk').value = item.namaKK;
+      document.getElementById('induk-rt-nikkk').value = item.nikKK;
+      document.getElementById('induk-rt-namaistri').value = (item.namaIstri === '-' ? '' : item.namaIstri);
+      document.getElementById('induk-rt-nikistri').value = (item.nikIstri === '-' ? '' : item.nikIstri);
+      document.getElementById('induk-rt-jml-anak-laki').value = item.jmlAnakLaki || 0;
+      document.getElementById('induk-rt-nama-anak-laki').value = (item.namaAnakLaki === '-' ? '' : item.namaAnakLaki || '');
+      document.getElementById('induk-rt-jml-anak-p').value = item.jmlAnakP || 0;
+      document.getElementById('induk-rt-nama-anak-p').value = (item.namaAnakP === '-' ? '' : item.namaAnakP || '');
+      document.getElementById('induk-rt-ekonomi').value = item.statusEkonomi || 'Sejahtera';
+      document.getElementById('induk-rt-is-rutilahu').checked = !!item.isRutilahu;
+      document.getElementById('induk-rt-is-bansos').checked = !!item.isBansos;
+      
+      const bInp = document.getElementById('induk-rt-jenis-bansos');
+      if (item.isBansos) {
+        bInp.value = item.jenisBansos || '';
+        bInp.classList.remove('hidden');
+      } else {
+        bInp.value = '';
+        bInp.classList.add('hidden');
+      }
+
+      document.getElementById('form-induk-container').classList.remove('hidden');
+      document.getElementById('form-induk-container').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function batalFormIndukRT() {
+      document.getElementById('form-induk-container').classList.add('hidden');
+    }
+
+    function handleIndukRTSubmit(e) {
+      e.preventDefault();
+      const editId = document.getElementById('induk-rt-edit-id').value;
+      const rt = document.getElementById('induk-rt-wilayah').value;
+      const noKK = document.getElementById('induk-rt-nokk').value.trim();
+      const genderKK = document.getElementById('induk-rt-gender-kk').value;
+      const namaKK = document.getElementById('induk-rt-namakk').value.trim();
+      const nikKK = document.getElementById('induk-rt-nikkk').value.trim();
+      const namaIstri = document.getElementById('induk-rt-namaistri').value.trim() || '-';
+      const nikIstri = document.getElementById('induk-rt-nikistri').value.trim() || '-';
+      
+      const jmlAnakLaki = Number(document.getElementById('induk-rt-jml-anak-laki').value) || 0;
+      const namaAnakLaki = document.getElementById('induk-rt-nama-anak-laki').value.trim() || '-';
+      const jmlAnakP = Number(document.getElementById('induk-rt-jml-anak-p').value) || 0;
+      const namaAnakP = document.getElementById('induk-rt-nama-anak-p').value.trim() || '-';
+
+      const statusEkonomi = document.getElementById('induk-rt-ekonomi').value;
+      const isRutilahu = document.getElementById('induk-rt-is-rutilahu').checked;
+      const isBansos = document.getElementById('induk-rt-is-bansos').checked;
+      const jenisBansos = isBansos ? (document.getElementById('induk-rt-jenis-bansos').value.trim() || 'Penerima Bansos') : '-';
+      const fileFoto = document.getElementById('induk-rt-foto').files[0];
+
+      function save(fotoBase64) {
+        if (editId) {
+          const idx = dataIndukRTList.findIndex(w => w.id == editId);
+          if (idx >= 0) {
+            dataIndukRTList[idx] = {
+              ...dataIndukRTList[idx],
+              rt, noKK, genderKK, nikKK, namaKK, namaIstri, nikIstri,
+              jmlAnakLaki, namaAnakLaki, jmlAnakP, namaAnakP,
+              statusEkonomi, isRutilahu, isBansos, jenisBansos,
+              foto: fotoBase64 || dataIndukRTList[idx].foto || ''
+            };
+            catatAudit('Edit Warga', `Memperbarui ${namaKK} (${rt})`);
+          }
+        } else {
+          dataIndukRTList.unshift({
+            id: Date.now(), rt, noKK, genderKK, nikKK, namaKK, namaIstri, nikIstri,
+            jmlAnakLaki, namaAnakLaki, jmlAnakP, namaAnakP,
+            statusEkonomi, isRutilahu, isBansos, jenisBansos,
+            foto: fotoBase64 || ''
+          });
+          catatAudit('Tambah Warga', `${namaKK} (${rt})`);
+        }
+
+        localStorage.setItem(INDUK_RT_KEY, JSON.stringify(dataIndukRTList));
+        renderIndukRT();
+        renderBansos();
+        renderDataWarga(); // LINK OTOMATIS
+        batalFormIndukRT();
+        alert(editId ? 'Data keluarga berhasil diperbarui!' : 'Data keluarga baru berhasil disimpan!');
+      }
+
+      if (fileFoto) {
+        const r = new FileReader();
+        r.onload = ev => save(ev.target.result);
+        r.readAsDataURL(fileFoto);
+      } else {
+        save('');
+      }
+    }
+
+    function hapusIndukRT(id) {
+      if (confirm('Hapus data keluarga ini dari Buku Induk?')) {
+        dataIndukRTList = dataIndukRTList.filter(i => i.id !== id);
+        localStorage.setItem(INDUK_RT_KEY, JSON.stringify(dataIndukRTList));
+        renderIndukRT();
+        renderBansos();
+        renderDataWarga();
+      }
+    }
+
+    function renderIndukRT() {
+      const filterRT = document.getElementById('induk-filter-rt').value;
+      const cari = document.getElementById('induk-cari-warga').value.toLowerCase().trim();
+      const container = document.getElementById('induk-rt-list');
+
+      const filtered = dataIndukRTList.filter(item => {
+        const matchRT = (filterRT === 'SEMUA') || (item.rt === filterRT);
+        const matchCari = !cari || item.namaKK.toLowerCase().includes(cari) || item.noKK.includes(cari) || item.nikKK.includes(cari);
+        return matchRT && matchCari;
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = '<div class="bg-white p-8 rounded-xl text-center text-slate-400 text-xs">Belum ada data keluarga terdaftar.</div>';
+        return;
+      }
+
+      container.innerHTML = filtered.map(item => {
+        const isJanda = (item.genderKK === 'P');
+        return `
+          <div class="bg-white rounded-2xl border border-slate-200 p-4 space-y-3 print-page-break shadow-sm">
+            <div class="flex flex-col sm:flex-row gap-3 items-start">
+              ${item.foto ? `<img src="${item.foto}" class="w-24 h-32 object-cover rounded-xl border shrink-0">` : `<div class="w-24 h-32 rounded-xl border border-dashed flex items-center justify-center text-slate-400 shrink-0 bg-slate-50"><i class="ph ph-user text-2xl"></i></div>`}
+              
+              <div class="flex-1 space-y-1 text-xs">
+                <div class="flex justify-between items-center border-b pb-1.5">
+                  <div class="flex flex-wrap items-center gap-1.5">
+                    <span class="px-2 py-0.5 rounded font-bold bg-blue-100 text-blue-800">${item.rt}</span>
+                    <span class="px-2 py-0.5 rounded font-bold ${isJanda ? 'bg-purple-100 text-purple-800' : 'bg-slate-100 text-slate-700'}">
+                      ${isJanda ? 'KK Perempuan (Janda/Single)' : 'KK Laki-Laki'}
+                    </span>
+                    <span class="px-2 py-0.5 rounded font-bold ${item.statusEkonomi === 'Pra Sejahtera' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}">${item.statusEkonomi}</span>
+                    ${item.isRutilahu ? `<span class="px-2 py-0.5 rounded font-bold bg-rose-100 text-rose-800">Rutilahu</span>` : ''}
+                    ${item.isBansos ? `<span class="px-2 py-0.5 rounded font-bold bg-blue-100 text-blue-800">${item.jenisBansos}</span>` : ''}
+                  </div>
+                  <span class="font-mono text-slate-500">No KK: <b>${item.noKK}</b></span>
+                </div>
+
+                <div class="pt-1">
+                  <div class="font-bold text-slate-800 text-sm">${item.namaKK} <span class="text-xs font-normal text-slate-500">(${item.nikKK})</span></div>
+                  <div class="text-slate-600">${isJanda ? 'Suami' : 'Istri'}: <b>${item.namaIstri}</b> ${item.nikIstri !== '-' ? `(${item.nikIstri})` : ''}</div>
+                </div>
+
+                <div class="bg-slate-50 p-2 rounded-lg border border-slate-100 grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
+                  <div>
+                    <span class="text-blue-800 font-bold block text-[11px]">Anak Laki-Laki (${item.jmlAnakLaki || 0} orang):</span>
+                    <span class="text-slate-600">${item.namaAnakLaki || '-'}</span>
+                  </div>
+                  <div>
+                    <span class="text-pink-800 font-bold block text-[11px]">Anak Perempuan (${item.jmlAnakP || 0} orang):</span>
+                    <span class="text-slate-600">${item.namaAnakP || '-'}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="border-t pt-2 flex justify-between items-center no-print text-xs">
+              <button onclick="window.print()" class="text-slate-700 hover:text-slate-900 font-semibold flex items-center gap-1">
+                <i class="ph ph-printer"></i> Cetak Kartu
+              </button>
+              <div class="flex gap-2">
+                <button onclick="editDataWarga(${item.id})" class="px-3 py-1 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-lg flex items-center gap-1 shadow-sm">
+                  <i class="ph-bold ph-pencil-simple"></i> Edit Data
+                </button>
+                <button onclick="hapusIndukRT(${item.id})" class="px-2.5 py-1 text-rose-600 hover:bg-rose-50 rounded-lg flex items-center gap-1 font-semibold">
+                  <i class="ph ph-trash"></i> Hapus
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // ========================================================
+    // HITUNG STATISTIK TETAP (KK L/P + ANAK L/P AKURAT)
+    // ========================================================
+    function renderDataWarga() {
+      const filterBlnEl = document.getElementById('warga-filter-bulan');
+      const filterBln = filterBlnEl ? filterBlnEl.value : currentMonthStr;
+
+      // Hitung dari Buku Induk RT
+      const statsTetapPerRT = {
+        'RT 01': { kk: 0, laki: 0, perempuan: 0 },
+        'RT 02': { kk: 0, laki: 0, perempuan: 0 },
+        'RT 03': { kk: 0, laki: 0, perempuan: 0 }
+      };
+
+      dataIndukRTList.forEach(w => {
+        if (statsTetapPerRT[w.rt]) {
+          statsTetapPerRT[w.rt].kk += 1;
+          const isJanda = (w.genderKK === 'P');
+
+          if (isJanda) {
+            // KK adalah PEREMPUAN
+            statsTetapPerRT[w.rt].perempuan += 1 + (Number(w.jmlAnakP) || 0);
+            // Suami jika ada + anak laki-laki
+            const adaSuami = (w.namaIstri && w.namaIstri !== '-') ? 1 : 0;
+            statsTetapPerRT[w.rt].laki += adaSuami + (Number(w.jmlAnakLaki) || 0);
+          } else {
+            // KK adalah LAKI-LAKI
+            statsTetapPerRT[w.rt].laki += 1 + (Number(w.jmlAnakLaki) || 0);
+            // Istri jika ada + anak perempuan
+            const adaIstri = (w.namaIstri && w.namaIstri !== '-') ? 1 : 0;
+            statsTetapPerRT[w.rt].perempuan += adaIstri + (Number(w.jmlAnakP) || 0);
+          }
+        }
+      });
+
+      const listDinamika = dataWargaDinamika.filter(d => d.bulan === filterBln);
+      const dinamikaMap = { 'RT 01': {}, 'RT 02': {}, 'RT 03': {} };
+      listDinamika.forEach(d => { dinamikaMap[d.rt] = d; });
+
+      let tKKTetap = 0, tLakiTetap = 0, tPTetap = 0, tMeninggal = 0, tLahir = 0;
+      let tKKKontrak = 0, tLakiKontrak = 0, tPKontrak = 0;
+
+      const tbTetap = document.getElementById('tabel-tetap-body');
+      const tbKontrak = document.getElementById('tabel-kontrak-body');
+      const rts = ['RT 01', 'RT 02', 'RT 03'];
+
+      if (tbTetap) {
+        tbTetap.innerHTML = rts.map(rt => {
+          const st = statsTetapPerRT[rt];
+          const dm = dinamikaMap[rt] || { meninggal: 0, lahir: 0 };
+
+          tKKTetap += st.kk;
+          tLakiTetap += st.laki;
+          tPTetap += st.perempuan;
+          tMeninggal += (dm.meninggal || 0);
+          tLahir += (dm.lahir || 0);
+
+          return `
+            <tr class="hover:bg-slate-50">
+              <td class="p-2.5 font-bold text-slate-800">${rt}</td>
+              <td class="p-2.5 text-right font-semibold text-slate-700">${st.kk} KK</td>
+              <td class="p-2.5 text-right font-medium text-blue-700">${st.laki} Jiwa</td>
+              <td class="p-2.5 text-right font-medium text-pink-700">${st.perempuan} Jiwa</td>
+              <td class="p-2.5 text-right font-black text-blue-900">${st.laki + st.perempuan} Jiwa</td>
+              <td class="p-2.5 text-right font-bold text-rose-600">${dm.meninggal || 0}</td>
+              <td class="p-2.5 text-right font-semibold text-emerald-600">${dm.lahir || 0}</td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      if (tbKontrak) {
+        tbKontrak.innerHTML = rts.map(rt => {
+          const dm = dinamikaMap[rt] || { kkKontrak: 0, lakiKontrak: 0, perempuanKontrak: 0 };
+          const kkK = dm.kkKontrak || 0;
+          const lK = dm.lakiKontrak || 0;
+          const pK = dm.perempuanKontrak || 0;
+
+          tKKKontrak += kkK;
+          tLakiKontrak += lK;
+          tPKontrak += pK;
+
+          return `
+            <tr class="hover:bg-amber-50/50">
+              <td class="p-2.5 font-bold text-amber-950">${rt}</td>
+              <td class="p-2.5 text-right font-semibold text-amber-900">${kkK} KK</td>
+              <td class="p-2.5 text-right font-medium text-blue-800">${lK} Jiwa</td>
+              <td class="p-2.5 text-right font-medium text-pink-800">${pK} Jiwa</td>
+              <td class="p-2.5 text-right font-black text-amber-900">${lK + pK} Jiwa</td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      document.getElementById('stat-tetap-kk').innerText = tKKTetap;
+      document.getElementById('stat-tetap-laki').innerText = tLakiTetap;
+      document.getElementById('stat-tetap-perempuan').innerText = tPTetap;
+      document.getElementById('stat-tetap-total').innerText = tLakiTetap + tPTetap;
+      document.getElementById('stat-tetap-dinamika').innerText = `W: ${tMeninggal} | L: ${tLahir}`;
+
+      document.getElementById('stat-kontrak-kk').innerText = tKKKontrak;
+      document.getElementById('stat-kontrak-laki').innerText = tLakiKontrak;
+      document.getElementById('stat-kontrak-perempuan').innerText = tPKontrak;
+      document.getElementById('stat-kontrak-total').innerText = tLakiKontrak + tPKontrak;
+
+      const grandTotal = (tLakiTetap + tPTetap) + (tLakiKontrak + tPKontrak);
+      document.getElementById('stat-grand-total').innerText = grandTotal.toLocaleString('id-ID');
+    }
+
+    function handleWargaSubmit(e) {
+      e.preventDefault();
+      const bln = document.getElementById('warga-input-bulan').value;
+      const rt = document.getElementById('warga-input-rt').value;
+      const kkKontrak = Number(document.getElementById('warga-input-kk-kontrak').value);
+      const lakiKontrak = Number(document.getElementById('warga-input-laki-kontrak').value);
+      const perempuanKontrak = Number(document.getElementById('warga-input-perempuan-kontrak').value);
+      const meninggal = Number(document.getElementById('warga-input-meninggal').value);
+      const lahir = Number(document.getElementById('warga-input-lahir').value);
+
+      const idx = dataWargaDinamika.findIndex(item => item.bulan === bln && item.rt === rt);
+      const item = { id: idx >= 0 ? dataWargaDinamika[idx].id : Date.now(), bulan: bln, rt, kkKontrak, lakiKontrak, perempuanKontrak, meninggal, lahir };
+      if (idx >= 0) dataWargaDinamika[idx] = item;
+      else dataWargaDinamika.push(item);
+
+      localStorage.setItem(WARGA_KEY, JSON.stringify(dataWargaDinamika));
+      bangunFilterBulanWarga();
+      renderDataWarga();
+      toggleFormWarga();
+      alert(`Data dinamika & warga ngontrak untuk ${rt} berhasil disimpan!`);
+    }
+
+    function bangunFilterBulanWarga() {
+      const monthSet = new Set();
+      monthSet.add(currentMonthStr);
+      dataWargaDinamika.forEach(w => { if (w.bulan) monthSet.add(w.bulan); });
+
+      const sortedMonths = Array.from(monthSet).sort().reverse();
+      const sel = document.getElementById('warga-filter-bulan');
+      if (!sel) return;
+      const curVal = sel.value || currentMonthStr;
+
+      sel.innerHTML = sortedMonths.map(m => `<option value="${m}">${formatBulanTahun(m)}</option>`).join('');
+      sel.value = sortedMonths.includes(curVal) ? curVal : sortedMonths[0];
+    }
+
+    // EXCEL DENGAN KOLOM GENDER KK
+    function downloadTemplateExcelWarga() {
+      const data = [
+        {
+          "Wilayah RT": "RT 01", "No KK": "3215012304050010",
+          "Jenis Kelamin KK (L/P)": "L", "Nama Kepala Keluarga": "Dadang Suherman", "NIK KTP KK": "3215011005820005",
+          "Nama Pasangan": "Neng Komalasari", "NIK KTP Pasangan": "3215015508860002",
+          "Jumlah Anak Laki": 1, "Nama Anak Laki": "Fajar",
+          "Jumlah Anak Perempuan": 1, "Nama Anak Perempuan": "Anisa",
+          "Status Ekonomi": "Pra Sejahtera", "Rutilahu": "Ya", "Bansos": "Ya", "Jenis Bansos": "PKH & BPNT"
+        },
+        {
+          "Wilayah RT": "RT 02", "No KK": "3215012304050099",
+          "Jenis Kelamin KK (L/P)": "P", "Nama Kepala Keluarga": "Ibu Hj. Aminah (Janda)", "NIK KTP KK": "3215015509650001",
+          "Nama Pasangan": "-", "NIK KTP Pasangan": "-",
+          "Jumlah Anak Laki": 1, "Nama Anak Laki": "Dimas",
+          "Jumlah Anak Perempuan": 0, "Nama Anak Perempuan": "-",
+          "Status Ekonomi": "Pra Sejahtera", "Rutilahu": "Ya", "Bansos": "Ya", "Jenis Bansos": "PKH"
+        }
+      ];
+      const ws = XLSX.utils.json_to_sheet(data);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Template_Warga");
+      XLSX.writeFile(wb, "Template_Warga_RW05_Lengkap.xlsx");
+    }
+
+    function prosesImportExcelWarga() {
+      const fileInput = document.getElementById('excel-warga-input');
+      const file = fileInput ? fileInput.files[0] : null;
+      if (!file) { alert('Silakan pilih file Excel terlebih dahulu!'); return; }
+      
+      const modeEl = document.querySelector('input[name="mode-import-warga"]:checked');
+      const mode = modeEl ? modeEl.value : 'merge';
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+          const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+          if (!rows || rows.length === 0) { alert('File Excel kosong atau format tidak sesuai.'); return; }
+
+          const parsed = [];
+          rows.forEach((r, idx) => {
+            const findVal = (keys) => {
+              for (const k of Object.keys(r)) {
+                const clean = k.toLowerCase().replace(/[^a-z0-9]/g, '');
+                for (const target of keys) {
+                  if (clean.includes(target)) return String(r[k] !== undefined ? r[k] : '').trim();
+                }
+              }
+              return '';
+            };
+
+            let rt = findVal(['wilayahrt', 'rt']) || 'RT 01';
+            if (rt.includes('01') || rt.includes('1')) rt = 'RT 01';
+            else if (rt.includes('02') || rt.includes('2')) rt = 'RT 02';
+            else if (rt.includes('03') || rt.includes('3')) rt = 'RT 03';
+
+            const noKK = findVal(['nokk', 'kartukeluarga', 'kk']);
+            const namaKK = findVal(['namakepalakeluarga', 'namakk', 'nama']);
+            const nikKK = findVal(['nikktpkk', 'nikkk', 'niksuami', 'nik']);
+            
+            const gRaw = findVal(['jeniskelaminkk', 'genderkk', 'gender', 'jk']);
+            const genderKK = (gRaw.toUpperCase().includes('P') || gRaw.toLowerCase().includes('perempuan')) ? 'P' : 'L';
+
+            const namaIstri = findVal(['namapasangan', 'namaistri', 'istri']) || '-';
+            const nikIstri = findVal(['nikktppasangan', 'nikktpistri', 'nikistri']) || '-';
+            
+            const jmlAnakLaki = Number(findVal(['jumlahanaklaki', 'anaklaki'])) || 0;
+            const namaAnakLaki = findVal(['namaanaklaki']) || '-';
+            const jmlAnakP = Number(findVal(['jumlahanakperempuan', 'anakperempuan', 'anakp'])) || 0;
+            const namaAnakP = findVal(['namaanakperempuan', 'namaanakp']) || '-';
+
+            const stEkonomiRaw = findVal(['statusekonomi', 'ekonomi']);
+            const stEkonomi = stEkonomiRaw.toLowerCase().includes('pra') ? 'Pra Sejahtera' : 'Sejahtera';
+            const rutilahuRaw = findVal(['rutilahu']);
+            const isRutilahu = rutilahuRaw.toLowerCase().includes('ya') || rutilahuRaw.toLowerCase().includes('true');
+            const bansosRaw = findVal(['bansos', 'bantuansosial']);
+            const isBansos = bansosRaw.toLowerCase().includes('ya') || bansosRaw.toLowerCase().includes('true');
+            const jenisBansos = findVal(['jenisbansos']) || (isBansos ? 'Penerima Bansos' : '-');
+
+            if (namaKK || noKK) {
+              parsed.push({
+                id: Date.now() + idx, rt, noKK: noKK || '-',
+                genderKK, nikKK: nikKK || '-', namaKK: namaKK || 'Warga',
+                namaIstri, nikIstri, jmlAnakLaki, namaAnakLaki, jmlAnakP, namaAnakP,
+                statusEkonomi: stEkonomi, isRutilahu, isBansos, jenisBansos, foto: ''
+              });
+            }
+          });
+
+          if (parsed.length === 0) { alert('Tidak ditemukan baris data yang valid.'); return; }
+          if (mode === 'replace') dataIndukRTList = parsed;
+          else dataIndukRTList = [...parsed, ...dataIndukRTList];
+
+          localStorage.setItem(INDUK_RT_KEY, JSON.stringify(dataIndukRTList));
+          renderIndukRT();
+          renderBansos();
+          renderDataWarga(); // LINK OTOMATIS
+          toggleUploadExcelWarga();
+          fileInput.value = '';
+          alert(`Sukses mengimpor ${parsed.length} data keluarga!`);
+        } catch(err) { alert('Gagal membaca berkas Excel: ' + err.message); }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    // BANSOS
+    function renderBansos() {
+      let pra = 0, ruti = 0, ban = 0, mer = 0;
+      dataIndukRTList.forEach(w => {
+        if (w.statusEkonomi === 'Pra Sejahtera') pra++;
+        if (w.isRutilahu) ruti++;
+        if (w.isBansos) ban++;
+        if (w.statusEkonomi === 'Pra Sejahtera' && w.isRutilahu) mer++;
+      });
+      document.getElementById('stat-prasejahtera').innerText = pra;
+      document.getElementById('stat-rutilahu').innerText = ruti;
+      document.getElementById('stat-bansos').innerText = ban;
+      document.getElementById('stat-merangkap').innerText = mer;
+
+      const tbody = document.getElementById('bansos-table-body');
+      const list = dataIndukRTList.filter(w => w.statusEkonomi === 'Pra Sejahtera' || w.isRutilahu || w.isBansos);
+      if (list.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-slate-400">Belum ada data warga kategori sosial.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = list.map(w => `
+        <tr class="hover:bg-slate-50">
+          <td class="p-2">${w.foto ? `<img src="${w.foto}" class="w-8 h-10 object-cover rounded">` : `<i class="ph ph-user text-xl text-slate-400"></i>`}</td>
+          <td class="p-2 font-bold">${w.rt}</td>
+          <td class="p-2 font-semibold">${w.namaKK}</td>
+          <td class="p-2 font-mono">${w.noKK}</td>
+          <td class="p-2">${w.statusEkonomi}</td>
+          <td class="p-2">${w.isRutilahu ? '<span class="text-rose-600 font-bold">Rutilahu</span>' : 'Layak'}</td>
+          <td class="p-2">${w.isBansos ? w.jenisBansos : '-'}</td>
+        </tr>
+      `).join('');
+    }
+
+    // PERIODE DASHBOARD
+    function onDashTahunChange() {
+      const y = document.getElementById('dash-select-tahun').value;
+      const m = document.getElementById('dash-select-bulan').value;
+      if (y === 'ALL') {
+        dashFilter.startDate = ''; dashFilter.endDate = '';
+      } else if (m === 'ALL') {
+        dashFilter.startDate = `${y}-01-01`; dashFilter.endDate = `${y}-12-31`;
+      } else {
+        const lastDay = new Date(parseInt(y), parseInt(m), 0).getDate();
+        dashFilter.startDate = `${y}-${m}-01`; dashFilter.endDate = `${y}-${m}-${lastDay}`;
+      }
+      document.getElementById('dash-start-date').value = dashFilter.startDate;
+      document.getElementById('dash-end-date').value = dashFilter.endDate;
+      resetPresetButtonStyles();
+      updateDashboardDanGrafik();
+    }
+
+    function onDashBulanChange() { onDashTahunChange(); }
+
+    function onDashCustomDateChange() {
+      dashFilter.startDate = document.getElementById('dash-start-date').value;
+      dashFilter.endDate = document.getElementById('dash-end-date').value;
+      document.getElementById('dash-select-tahun').value = 'ALL';
+      document.getElementById('dash-select-bulan').value = 'ALL';
+      resetPresetButtonStyles();
+      updateDashboardDanGrafik();
+    }
+
+    function resetPresetButtonStyles() {
+      document.querySelectorAll('.dash-preset-btn').forEach(b => {
+        b.classList.remove('bg-blue-600', 'text-white');
+        b.classList.add('bg-slate-100', 'text-slate-700');
+      });
+    }
+
+    function setDashPreset(mode) {
+      dashFilter.mode = mode;
+      const now = new Date();
+      let start = '', end = now.toISOString().split('T')[0];
+      if (mode === 'today') start = end;
+      else if (mode === 'week') {
+        const curr = new Date();
+        const first = curr.getDate() - curr.getDay() + (curr.getDay() === 0 ? -6 : 1);
+        start = new Date(curr.setDate(first)).toISOString().split('T')[0];
+      } else if (mode === 'month') {
+        start = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+        end = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+      } else if (mode === 'year') {
+        start = `${now.getFullYear()}-01-01`; end = `${now.getFullYear()}-12-31`;
+      }
+
+      dashFilter.startDate = start;
+      dashFilter.endDate = end;
+
+      document.getElementById('dash-start-date').value = start;
+      document.getElementById('dash-end-date').value = end;
+      document.getElementById('dash-select-tahun').value = mode === 'year' ? now.getFullYear() : 'ALL';
+      document.getElementById('dash-select-bulan').value = mode === 'month' ? String(now.getMonth() + 1).padStart(2, '0') : 'ALL';
+
+      resetPresetButtonStyles();
+      const activeBtn = document.getElementById('dash-btn-' + mode);
+      if (activeBtn) {
+        activeBtn.classList.add('bg-blue-600', 'text-white');
+        activeBtn.classList.remove('bg-slate-100', 'text-slate-700');
+      }
+
+      updateDashboardDanGrafik();
+    }
+
+    function updateDashboardDanGrafik() {
+      const filtered = transaksi.filter(t => {
+        const isAwal = t.kategori && t.kategori.includes('Saldo Awal');
+        if (isAwal && !dashFilter.startDate && !dashFilter.endDate) return true;
+        return (!dashFilter.startDate || t.tanggal >= dashFilter.startDate) && (!dashFilter.endDate || t.tanggal <= dashFilter.endDate);
+      });
+
+      const pLabel = document.getElementById('dash-periode-label');
+      if (pLabel) {
+        pLabel.innerText = (dashFilter.startDate || dashFilter.endDate)
+          ? `Menampilkan data: ${dashFilter.startDate || 'Awal'} s/d ${dashFilter.endDate || 'Sekarang'} (${filtered.length} transaksi)`
+          : `Menampilkan seluruh data pembukuan (${filtered.length} transaksi)`;
+      }
+
+      const stats = { 'RT 01': { in: 0, out: 0, awal: 0 }, 'RT 02': { in: 0, out: 0, awal: 0 }, 'RT 03': { in: 0, out: 0, awal: 0 }, 'RW 05': { in: 0, out: 0, awal: 0 } };
+      let tIn = 0, tOut = 0;
+
+      filtered.forEach(t => {
+        const isAwal = t.kategori && t.kategori.includes('Saldo Awal');
+        if (t.tipe === 'masuk') {
+          if (isAwal) stats[t.entitas].awal += t.nominal;
+          else stats[t.entitas].in += t.nominal;
+          tIn += t.nominal;
+        } else {
+          stats[t.entitas].out += t.nominal;
+          tOut += t.nominal;
+        }
+      });
+
+      let setorRW = 0;
+      ['RT 01', 'RT 02', 'RT 03'].forEach((rt, idx) => {
+        const idMap = ['rt1', 'rt2', 'rt3'][idx];
+        const surp = stats[rt].in - stats[rt].out;
+        const pot = surp > 0 ? Math.round(surp * 0.1) : 0;
+        setorRW += pot;
+        document.getElementById('saldo-' + idMap).innerText = formatRupiah(stats[rt].awal + surp - pot);
+        document.getElementById('setor-' + idMap).innerText = '-' + formatRupiah(pot);
+      });
+
+      const sRW = stats['RW 05'].awal + (stats['RW 05'].in - stats['RW 05'].out) + setorRW;
+      document.getElementById('saldo-rw').innerText = formatRupiah(sRW);
+      document.getElementById('total-setoran-rt').innerText = '+' + formatRupiah(setorRW);
+
+      document.getElementById('dash-total-masuk').innerText = formatRupiah(tIn);
+      document.getElementById('dash-total-keluar').innerText = formatRupiah(tOut);
+      document.getElementById('dash-surplus-total').innerText = formatRupiah(tIn - tOut);
+
+      const ctx = document.getElementById('chartPerbandingan');
+      if (ctx) {
+        if (chartBarInstance) chartBarInstance.destroy();
+        chartBarInstance = new Chart(ctx.getContext('2d'), {
+          type: 'bar',
+          data: {
+            labels: ['RT 01', 'RT 02', 'RT 03', 'RW 05'],
+            datasets: [
+              { label: 'Masuk', data: ['RT 01', 'RT 02', 'RT 03', 'RW 05'].map(e => stats[e].awal + stats[e].in), backgroundColor: '#10b981' },
+              { label: 'Keluar', data: ['RT 01', 'RT 02', 'RT 03', 'RW 05'].map(e => stats[e].out), backgroundColor: '#f43f5e' }
+            ]
+          },
+          options: { responsive: true, maintainAspectRatio: false }
+        });
+      }
+    }
+
+    function renderTutupBukuBulanan() {
+      const perBulan = {};
+      transaksi.forEach(t => {
+        const bln = t.tanggal.substring(0, 7);
+        if (!perBulan[bln]) perBulan[bln] = { 'RT 01': { in: 0, out: 0 }, 'RT 02': { in: 0, out: 0 }, 'RT 03': { in: 0, out: 0 }, 'RW 05': { in: 0, out: 0 } };
+        const isAwal = t.kategori && t.kategori.includes('Saldo Awal');
+        if (t.tipe === 'masuk') {
+          if (!isAwal && perBulan[bln][t.entitas]) perBulan[bln][t.entitas].in += t.nominal;
+        } else {
+          if (perBulan[bln][t.entitas]) perBulan[bln][t.entitas].out += t.nominal;
+        }
+      });
+
+      const listRekap = [];
+      Object.keys(perBulan).sort().forEach(bKey => {
+        ['RT 01', 'RT 02', 'RT 03'].forEach(rt => {
+          const inOps = perBulan[bKey][rt].in;
+          const outOps = perBulan[bKey][rt].out;
+          const surplus = inOps - outOps;
+          let cut10 = 0;
+          if (surplus > 0) cut10 = Math.round(surplus * 0.10);
+          if (inOps > 0 || outOps > 0) {
+            listRekap.push({ bulan: bKey, entitas: rt, inOps, outOps, surplus, potongan: cut10, hakRT: surplus - cut10 });
+          }
+        });
+      });
+
+      const tbody = document.getElementById('tutup-buku-body');
+      if (!tbody) return;
+      if (listRekap.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-slate-400">Belum ada transaksi operasional bulanan.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = listRekap.map(r => `
+        <tr class="hover:bg-slate-50">
+          <td class="p-3 font-mono font-bold text-slate-700">${r.bulan}</td>
+          <td class="p-3 font-semibold text-blue-700">${r.entitas}</td>
+          <td class="p-3 text-right font-medium text-emerald-600">${formatRupiah(r.inOps)}</td>
+          <td class="p-3 text-right font-medium text-rose-600">${formatRupiah(r.outOps)}</td>
+          <td class="p-3 text-right font-bold ${r.surplus >= 0 ? 'text-slate-800' : 'text-rose-700'}">${formatRupiah(r.surplus)}</td>
+          <td class="p-3 text-right font-bold text-purple-700">${r.potongan > 0 ? formatRupiah(r.potongan) : 'Rp 0'}</td>
+          <td class="p-3 text-right font-bold text-emerald-700">${formatRupiah(r.hakRT)}</td>
+        </tr>
+      `).join('');
+    }
+
+    function renderLaporan() {
+      const fEnt = document.getElementById('filter-entitas').value;
+      const fTipe = document.getElementById('filter-tipe').value;
+      const fStart = document.getElementById('filter-start').value;
+      const fEnd = document.getElementById('filter-end').value;
+
+      const filtered = transaksi.filter(t => {
+        return (fEnt === 'SEMUA' || t.entitas === fEnt) &&
+               (fTipe === 'SEMUA' || t.tipe === fTipe) &&
+               (!fStart || t.tanggal >= fStart) &&
+               (!fEnd || t.tanggal <= fEnd);
+      });
+
+      const tbody = document.getElementById('tx-table-body');
+      if (!tbody) return;
+      if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-slate-400">Tidak ada transaksi ditemukan.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = filtered.map(t => `
+        <tr class="hover:bg-slate-50">
+          <td class="p-2.5 font-mono text-[11px]">${t.tanggal}</td>
+          <td class="p-2.5 font-bold">${t.entitas}</td>
+          <td class="p-2.5">${t.kategori}</td>
+          <td class="p-2.5 text-slate-500">${t.keterangan}</td>
+          <td class="p-2.5 text-right font-bold text-emerald-600">${t.tipe === 'masuk' ? formatRupiah(t.nominal) : '-'}</td>
+          <td class="p-2.5 text-right font-bold text-rose-600">${t.tipe === 'keluar' ? formatRupiah(t.nominal) : '-'}</td>
+          <td class="p-2.5 text-center no-print">
+            <button onclick="hapusTransaksiKas(${t.id})" class="text-rose-600 hover:text-rose-800 p-1 font-bold text-xs flex items-center justify-center gap-1 mx-auto" title="Hapus">
+              <i class="ph ph-trash text-base"></i> Hapus
+            </button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function hapusTransaksiKas(id) {
+      const pin = prompt('Masukkan PIN Pengurus untuk menghapus transaksi kas ini:');
+      if (pin === localStorage.getItem(PIN_KEY)) {
+        transaksi = transaksi.filter(t => t.id !== id);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(transaksi));
+        renderLaporan();
+        updateDashboardDanGrafik();
+        renderTutupBukuBulanan();
+        alert('Transaksi kas berhasil dihapus!');
+      } else if (pin !== null) {
+        alert('PIN Salah!');
+      }
+    }
+
+    function handleFormSubmit(e, tipe) {
+      e.preventDefault();
+      const prefix = tipe === 'masuk' ? 'in' : 'out';
+      transaksi.unshift({
+        id: Date.now(),
+        tanggal: document.getElementById(prefix + '-tanggal').value,
+        tipe,
+        entitas: document.getElementById(prefix + '-entitas').value,
+        kategori: document.getElementById(prefix + '-kategori').value,
+        nominal: Number(document.getElementById(prefix + '-nominal').value),
+        keterangan: document.getElementById(prefix + '-keterangan').value || '-'
+      });
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(transaksi));
+      bangunDaftarTahunOtomatis();
+      alert('Transaksi kas berhasil disimpan!');
+      pindahMenu('dashboard');
+    }
+
+    function handleKegiatanSubmit(e) {
+      e.preventDefault();
+      const tgl = document.getElementById('keg-input-tgl').value;
+      const wilayah = document.getElementById('keg-input-wilayah').value;
+      const nama = document.getElementById('keg-input-nama').value;
+      const lokasi = document.getElementById('keg-input-lokasi').value || '-';
+      const deskripsi = document.getElementById('keg-input-deskripsi').value || '-';
+      const fotoFile = document.getElementById('keg-input-foto').files[0];
+
+      function save(f) {
+        dataKegiatanList.unshift({ id: Date.now(), tanggal: tgl, wilayah, nama, lokasi, deskripsi, foto: f });
+        localStorage.setItem(KEGIATAN_KEY, JSON.stringify(dataKegiatanList));
+        renderKegiatanRW();
+        toggleFormKegiatan();
+        alert('Laporan kegiatan disimpan!');
+      }
+
+      if (fotoFile) {
+        const r = new FileReader();
+        r.onload = ev => save(ev.target.result);
+        r.readAsDataURL(fotoFile);
+      } else save('');
+    }
+
+    function hapusKegiatan(id) {
+      const pin = prompt('Masukkan PIN Pengurus untuk menghapus laporan kegiatan ini:');
+      if (pin === localStorage.getItem(PIN_KEY)) {
+        dataKegiatanList = dataKegiatanList.filter(k => k.id !== id);
+        localStorage.setItem(KEGIATAN_KEY, JSON.stringify(dataKegiatanList));
+        renderKegiatanRW();
+        alert('Laporan kegiatan berhasil dihapus!');
+      } else if (pin !== null) {
+        alert('PIN Salah! Tindakan dibatalkan.');
+      }
+    }
+
+    function renderKegiatanRW() {
+      const c = document.getElementById('kegiatan-gallery-list');
+      if (!c) return;
+      if (dataKegiatanList.length === 0) {
+        c.innerHTML = '<div class="bg-white p-8 rounded-xl text-center text-slate-400 text-xs">Belum ada dokumentasi kegiatan yang dicatat.</div>';
+        return;
+      }
+      c.innerHTML = dataKegiatanList.map(k => `
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row gap-4 text-xs print-page-break">
+          ${k.foto ? `<img src="${k.foto}" class="w-full sm:w-40 h-32 object-cover rounded-lg shrink-0 border">` : `<div class="w-full sm:w-40 h-32 rounded-lg border border-dashed flex items-center justify-center text-slate-400 shrink-0"><i class="ph ph-image text-3xl"></i></div>`}
+          <div class="flex-1 space-y-1.5 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between">
+                <span class="px-2 py-0.5 rounded font-bold ${k.wilayah.includes('RW') ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'} text-[10px]">${k.wilayah}</span>
+                <span class="text-slate-400 font-mono text-[11px]">${k.tanggal}</span>
+              </div>
+              <h4 class="font-bold text-sm text-slate-800 mt-1">${k.nama}</h4>
+              <p class="text-amber-800 font-semibold text-[11px] flex items-center gap-1"><i class="ph ph-map-pin"></i> ${k.lokasi}</p>
+              <p class="text-slate-600 mt-1 leading-relaxed whitespace-pre-line">${k.deskripsi}</p>
+            </div>
+            <div class="border-t pt-2 flex items-center justify-between no-print mt-2">
+              <button onclick="window.print()" class="text-slate-700 hover:text-slate-900 font-semibold flex items-center gap-1"><i class="ph ph-printer"></i> Cetak</button>
+              <button onclick="hapusKegiatan(${k.id})" class="text-rose-600 hover:text-rose-800 font-bold flex items-center gap-1"><i class="ph ph-trash"></i> Hapus Laporan</button>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderAuditLog() {
+      const tbody = document.getElementById('history-table-body');
+      if (!tbody) return;
+      tbody.innerHTML = auditLog.map(l => `
+        <tr class="hover:bg-slate-50 text-xs">
+          <td class="p-2 font-mono text-slate-500">${l.waktu}</td>
+          <td class="p-2 font-bold">${l.aksi}</td>
+          <td class="p-2">${l.detail}</td>
+        </tr>
+      `).join('');
+    }
+
+    function unduhCadanganJSON() {
+      const d = { identitas: identitasConfig, pin: localStorage.getItem(PIN_KEY), transaksi, dataWargaDinamika, kegiatan: dataKegiatanList, dataIndukRT: dataIndukRTList, auditLog };
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([JSON.stringify(d, null, 2)], { type: 'application/json' }));
+      a.download = `Cadangan_Lengkap_RW05_${todayStr}.json`;
+      a.click();
+    }
+
+    function pulihkanDataJSON(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const r = new FileReader();
+      r.onload = ev => {
+        try {
+          const d = JSON.parse(ev.target.result);
+          if (d) {
+            transaksi = d.transaksi || [];
+            dataIndukRTList = d.dataIndukRT || [];
+            dataWargaDinamika = d.dataWargaDinamika || [];
+            dataKegiatanList = d.kegiatan || [];
+            if (d.identitas) identitasConfig = d.identitas;
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(transaksi));
+            localStorage.setItem(INDUK_RT_KEY, JSON.stringify(dataIndukRTList));
+            localStorage.setItem(WARGA_KEY, JSON.stringify(dataWargaDinamika));
+            localStorage.setItem(KEGIATAN_KEY, JSON.stringify(dataKegiatanList));
+            localStorage.setItem(IDENTITAS_KEY, JSON.stringify(identitasConfig));
+            alert('Data berhasil dipulihkan!');
+            renderAll();
+            pindahMenu('dashboard');
+          }
+        } catch { alert('File cadangan tidak valid.'); }
+      };
+      r.readAsText(file);
+    }
+
+    function ubahPinPengurus() {
+      const oldP = document.getElementById('pin-old').value;
+      const newP = document.getElementById('pin-new').value;
+      if (oldP === localStorage.getItem(PIN_KEY) && newP.length >= 4) {
+        localStorage.setItem(PIN_KEY, newP);
+        alert('PIN berhasil diubah!');
+        document.getElementById('pin-old').value = '';
+        document.getElementById('pin-new').value = '';
+      } else alert('PIN Lama salah atau PIN Baru kurang dari 4 digit.');
+    }
+
+    function catatAudit(aksi, detail) {
+      auditLog.unshift({ waktu: new Date().toLocaleString('id-ID'), aksi, detail });
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(auditLog));
+    }
+
+    function bangunDaftarTahunOtomatis() {
+      const yearSet = new Set();
+      yearSet.add(currentYear);
+      yearSet.add(currentYear + 1);
+      yearSet.add(currentYear - 1);
+      transaksi.forEach(t => { if (t.tanggal) yearSet.add(parseInt(t.tanggal.substring(0, 4))); });
+
+      const sortedYears = Array.from(yearSet).sort((a, b) => b - a);
+      const sel = document.getElementById('dash-select-tahun');
+      if (sel) {
+        sel.innerHTML = `<option value="ALL">Semua Tahun</option>` + sortedYears.map(y => `<option value="${y}">Tahun ${y}</option>`).join('');
+        sel.value = "ALL";
+      }
+    }
+
+    function renderAll() {
+      applyIdentitasWilayah();
+      bangunDaftarTahunOtomatis();
+      bangunFilterBulanWarga();
+      updateDashboardDanGrafik();
+      renderTutupBukuBulanan();
+      renderDataWarga();
+      renderIndukRT();
+      renderBansos();
+      renderKegiatanRW();
+    }
+
+    renderAll();
+  </script>
+</body>
+</html>
